@@ -125,7 +125,7 @@ An example from the `regexp` package:
 A bidirectional map, i.e. an associative data structure in which the key-value pairs
 form a one-to-one correspondence.
 
-1. Open `go-course-advanced/src/bimap` in VS Code.
+1. Open `go-course-advanced/src/bidirectionalmap` in VS Code.
 
 2. `Bimap` implements a bidirectional map from strings to strings with O(1) access.
 
@@ -211,7 +211,7 @@ In most cases, you need to lazily initializing fields within methods on that typ
 
 * Exercise: make Bimap's zero value useful
 
-1. Re-open `go-course-advanced/src/bimap` in VS Code.
+1. Re-open `go-course-advanced/src/bidirectionalmap` in VS Code.
 
 2. Is `Bimap`'s zero value usable?
 
