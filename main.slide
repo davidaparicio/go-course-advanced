@@ -284,8 +284,8 @@ Avoid unkeyed literal, especially for types whose declaration is outside your co
 
 * Trick for disallowing unkeyed struct literals
 
-Adding an unnamed field of type `struct{}` prevents users of your type from
-using unkeyed literals of it:
+Adding an unexported field of type `struct{}` prevents clients of your package
+from using unkeyed literals of your type:
 
 .play -edit src/unkeyed/main.go /^//START/,/^//END/
 
@@ -373,13 +373,15 @@ you can gather those test cases under a single test function and run them as _su
       {label: "too long", username: "obviously_longer_than_15_chars"},
       {label: "too short", username: "foo"},
     }
-    for c := range cases {
-      t.Run(c.label, func(t *testing.T) {
-        got := twitter.IsValid(c.username)
+    for _, c := range cases {
+      f := func(t *testing.T) {
+        var tw twitter.Twitter
+        got := tw.IsValid(c.username)
         if got != c.want {
           t.Errorf("twitter.IsValid(%s): got %t; want %t", c.username, got, c.want)
         }
-      })
+      }
+      t.Run(c.label, f)
     }
   }
 
