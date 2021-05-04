@@ -521,3 +521,291 @@ To provide more information, declare your own type that satisfies `error` and `w
 5. Rather than bubbling up the low-level error produces by the `http` package in the `IsAvailable` function, return a pointer to a value of your custom error type.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Inspecting error values: comparison with sentinel errors
+
+Don't stop at `err`!=`nil`. [[https://www.youtube.com/watch?v=PAAkCSZUG1c&t=17m27s][Don't just check errors; handle them gracefully]].
+
+You can compare an error to a specific sentinel error value:
+
+  if err != io.EOF {
+    // handle error
+  }
+
+Since [[https://blog.golang.org/go1.13-errors][Go 1.13]], you can ask wether the error chain contains the error value of interest:
+
+  if errors.Is(err, io.EOF) {
+    // handle error
+  }
+
+If you're only interested in the next value up the error chain, do this:
+
+  type wrapper interface { Unwrap() error }
+  if err, ok := err.(wrapper); ok { // err has a cause
+    // call err.Unwrap to access the error that caused err
+  }
+
+
+
+* Exercise: inspect the cause of an error
+
+1. Open `go-course-advanced/src/namecheck` in VS Code.
+
+2. In `cmd/cli/main.go`, access the cause of the error returned by `IsAvailable` and print it.
+
+3. To trigger an artificial error, scramble the host in the implementation of `GitHub`'s `IsAvailable` method.
+
+4. Compile and run the program.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Inspecting error values: asserting on behavior
+
+A type assertion can tell you whether an error satisfies a more specific interface:
+
+  type temporary interface {
+    Temporary() bool
+  }
+  if errTemp, ok := err.(temporary); ok {
+    // call errTemp.Temporary
+    // if it returns true, perhaps retry the operation that failed
+  }
+
+Since Go 1.13, you can check whether the error chain contains a value of that interface:
+
+  type temporary interface {
+    Temporary() bool
+  }
+  var errTemp temporary
+  if errors.As(err, &errTemp) {
+    // call errTemp.Temporary
+    // if it returns true, perhaps retry the operation that failed
+  }
+
+
+
+* Organizing packages
+
+
+
+* Use internal packages
+
+An internal package is any package whose path contains a segment named "internal".
+
+It can only be imported by the parent and sibling packages. For example, a package `foo/bar/internal/baz` can only be imported by package `foo/bar` and its subpackages.
+
+
+Internal packages are [[https://dave.cheney.net/2019/10/06/use-internal-packages-to-reduce-your-public-api-surface][a great language mechanics for restricting the surface area of your project's API]]. They tend to be underused. Use them liberally!
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/knight.svg 200 _
+
+: great for preventing clients from depending directly on implementation details.
+: example: net/http/internal
+
+
+
+* Exercise: put common implementation details in an internal package
+
+1. Open `go-course-advanced/src/namecheck` in VS Code.
+
+2. Identify duplication between the `twitter` and `github` package.
+
+3. Create a `namecheck/internal` package.
+
+4. Move the code shared by packages `twitter` and `github` in that internal package.
+
+5. Try importing `namecheck/internal` in `cmd/cli/main.go` and running `go`build`.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Reminder: no dependency cycles allowed
+
+For example, package `foo` cannot import package `bar` if `bar` itself imports `foo`.
+
+.image img/dependency_cycle.svg 150 _
+
+Imports form a _directed_acyclic_graph_, like the graph of commits in a Git repository.
+
+This design decision by the Go team is a key enabler of fast compilation.
+
+.image https://miro.medium.com/max/4800/1*-bo7H329eM0O1eL_ASBVOA.jpeg 200 _
+
+: any cycle issues in your projects?
+
+
+
+* Avoiding dependency cycles
+
+A rule of thumb is that a superpackage doesn't depend on any of its subpackages.
+
+For example, here is a partial view of the `encoding` package and its subpackages:
+
+.image img/dep_arrows_dont_point_down.svg _ 1000
+
+More general stuff at the top; more specific stuff in subpackages.
+
+
+
+* Flat is better
+
+To a deep and narrow package hierarchy, prefer a shallow and possibly wide one:
+
+.image img/pkg_shallow_and_wide.svg 400 _
+
+
+
+* Structuring your project
+
+If you don't know where to start, adopt a flat structure: everything in a single package.
+
+As structure emerges, create packages organized by context rather than by function.
+
+The structure of your project should tell a story. Avoid MVC layouts!
+
+Resources:
+
+- [[https://medium.com/@benbjohnson/standard-package-layout-7cdbc8391fc1][Ben Jonhson - Standard Package Layout]]
+- [[https://www.youtube.com/watch?v=oL6JBUk6tj0][Kat Zien - How Do You Structure Your Go Apps (GopherCon 2018)]]
+- [[https://rakyll.org/style-packages/][Jaana B. Dogan - Style guideline for Go packages]]
+
+.image https://www.pngkit.com/png/full/412-4127445_gopher-working-hard-to-move-packages-boxes-golang.png 150 _
+
+: context (twitter, github) ; responsibility (storage)
+
+
+
+* Domain-driven design in Go
+
+_Domain-driven_design_(DDD)_is_the_concept_that_the_structure_and_language_of_software_code_should_match_the_business_domain._ ([[https://en.wikipedia.org/wiki/Domain-driven_design][Wikipedia]])
+
+- In a Go monolith, structure your packages around your [[https://martinfowler.com/bliki/BoundedContext.html][_bounded_contexts_]].
+
+- Implicit satisfation makes Go interfaces perfect for [[https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)][_ports_and_adapters_]]!
+
+- Declare named types that reflect your context's [[https://martinfowler.com/bliki/UbiquitousLanguage.html][_ubiquitous_language_]].
+
+- Well-encapsulated types with a useful zero value make for great _domain_objects_.
+
+- Use value (not pointer) method receivers for [[https://martinfowler.com/bliki/ValueObject.html][_value_objects_]].
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/sage.svg 200 _
+
+: [[https://www.youtube.com/watch?v=B-reKkB8L5Q][Some people]] have even implemented [[https://www.youtube.com/watch?v=JHGkaShoyNs][event-sourced systems]] in Go!
+: discuss
+
+
+
+* Generics
+
+
+* What are generics?
+
+Generics, also known as "type parameters", allow [[https://en.wikipedia.org/wiki/Parametric_polymorphism][_parametric_polymorphism_]].
+
+Respondents to the annual Go survey have been [[https://blog.golang.org/survey2020-results][clamoring for them]] for years.
+
+A [[https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md][language proposal]] has been accepted, and generics are finally coming to Go
+(most likely [[https://www.youtube.com/watch?v=BNHwHLNLjLs&t=29m][by the end of 2021]]), without breaking compatibility with Go 1.0!
+
+You can experiment with Go generics in a [[https://go2goplay.golang.org/][special Playground]].
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/party/birthday.svg 200 _
+
+: familiar with generics?
+
+
+
+* Why generics matter
+
+The advent of generics is promising:
+
+- more flexible and reusable functions and [[https://jub0bs.com/posts/2020-07-21-go-bimap][data structures]]
+- more efficient code at run time (at the cost of longer compilation)
+- more type safety (fewer use cases for the empty interface)
+- fewer reasons to resort to code generation
+
+See [[https://blog.golang.org/why-generics][_Why_Generics?_]] on the golang blog (the syntax is outdated, though).
+
+Some people worry that generics are going to compromise Go's agenda of simplicity.
+Time will tell...
+
+: e.g. generic function for reversing a slice
+: What do you think?
+: see use cases in your code? do you use go generate?
+
+
+
+* Exercise: make a binary-tree type generic
+
+1. Open [[https://go2goplay.golang.org/p/ogVJA0hyXpm][https://go2goplay.golang.org/p/ogVJA0hyXpm]].
+
+2. The `Tree` type represents a binary tree. Study its implementation.
+
+3. Modify the code to make `Tree` and its methods generic. Any issues?
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+: solution: https://go2goplay.golang.org/p/Pq3wA9WjdgO
+
+
+
+* Context
+
+
+* Goroutines die hard
+
+You can start goroutines very easily: all it takes is the `go` keyword.
+
+However, if you're careless, the goroutines you spawn may never terminate.
+
+.play -edit src/uncancellable/main.go /^//START/,/^//END/
+
+: everyone ok with go keyword and wait groups?
+
+
+
+* The golden rule
+
+Before spawning a new goroutine, you must understand exactly under what conditions it will terminate.
+
+If you're careless and spawn goroutines willy-nilly, you expose yourself to correctness and performance bugs (_goroutine_leaks_).
+
+.image https://www.globalnerdy.com/wp-content/uploads/2017/08/gopher-this-is-fine.jpg 300 _
+
+
+
+* Context is for cancellation
+
+The `context` package provides a `Context` type.
+
+  type Context interface {
+    Deadline() (deadline time.Time, ok bool)
+    Done() <-chan struct{}
+    Err() error
+    Value(key interface{}) interface{}
+  }
+
+Its primary purpose is to *broadcast*a*cancellation*signal* to child goroutines.
+The cancellation signal may be sent explicitly or time-based.
+
+We'll talk about `Context`'s secondary (more controversial) purpose later.
+
+
+
+* Detecting context cancellation via the Err method
+
+.play -edit src/cancellableerr/main.go /^//START/,/^//END/
+
+
+
+* Detecting context cancellation via the Done method
+
+This is more idiomatic than using the `Err` method, though:
+
+.play -edit src/cancellablechan/main.go /^//START/,/^//END/
