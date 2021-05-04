@@ -1,0 +1,519 @@
+Formation Go avancé
+01 January 2021
+
+Julien Cretel
+jcretel-infosec@protonmail.com
+https://jub0bs.com
+@jub0bs
+
+* Setup
+
+- Go (>= 1.16)
+- Visual Studio Code
+- [[https://code.visualstudio.com/docs/languages/go][Go extension for Visual Studio Code]]
+- Git
+
+* Overview of the Namecheck project
+
+
+* Optimize your code for reading
+
+
+
+* Use constants provided by packages you import
+
+Critique the following code snippet. What would you improve?
+
+.code src/magicnumbers/magicnumbers.go /^//START/,/^//END/
+
+
+
+* Use constants provided by packages you import
+
+Many packages, such as the `http` package, provide useful constants. Use them!
+
+.code src/magicnumbers/nomagicnumbers.go /^//START/,/^//END/
+
+Using constants clarifies your code and reduces the risk for programming errors.
+
+However, don't import packages _just_ for using the constants they export.
+
+
+
+* Declare your own clarifying variables and constants
+
+A nameless value is [[https://www.youtube.com/watch?v=5DVV36uqQ4E&t=925s][confusing]]:
+
+  for i := 0; i < 16; i++ {
+    go worker(results, job)
+  }
+
+Document its meaning through a clarifying identifier:
+
+  const nbWorkers = 16
+  for i := 0; i < nbWorkers; i++ {
+    go worker(results, job)
+  }
+
+Apply the same principle to channel capacities, slice lengths and capacities, etc.
+
+: ignore objections about the value only being used once
+: channel capacity often influences correctness and performance of a programme
+
+
+
+* Avoid reflect and unsafe
+
+*reflect*
+
+Using the `reflect` package is difficult, leads unreadable code, and often creates performance issues.
+
+*unsafe*
+
+`unsafe` is excluded from the [[https://golang.org/doc/go1compat#expectations][Go 1 compatibility guarantee]]. Importing the `unsafe` package therefore makes your code likely to break with a future release.
+
+Resources:
+
+- [[https://www.youtube.com/watch?v=PAAkCSZUG1c&t=925s][Rob Pike about the `reflect` package]]
+- [[https://www.youtube.com/watch?v=ZJFMvWHtSAA][James Bowes - Shattered Mirror: An Introduction to Reflect and Unsafe (dotGo 2019)]].
+
+: if you must use those packages, don't let it leak through your API
+
+
+
+* API design
+
+
+* What is a good API?
+
+A good API
+
+- is easy to use but [[https://www.youtube.com/watch?v=aAb7hSCtvGw&t=6m][hard to misuse]],
+- meets its current requirements but is flexible enough to meet anticipated future requirements.
+
+Here are some general principles and specific techniques for designing good APIs in Go.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/friends/stovepipe-hat.svg 200 _
+
+
+
+* Encapsulate your types judiciously
+
+Well-encapsulated types are harder to misuse and easier to evolve over time.
+
+For designing a type that provides behaviors and needs to maintain _invariants_, strive for an _opaque_struct_:
+
+- use a struct as the underlying type,
+- keep its fields unexported.
+
+If instantiating your type requires some configuration, export _factory_function(s)_ for it.
+
+An example from the `regexp` package:
+
+  type Regexp struct {
+      // contains filtered or unexported fields
+  }
+
+  func Compile(expr string) (*Regexp, error)
+
+: case first letter of an identifier determines whether exported or not
+
+
+
+* Exercise: encapsulate a bidirectional-map type
+
+A bidirectional map, i.e. an associative data structure in which the key-value pairs
+form a one-to-one correspondence.
+
+1. Open `go-course-advanced/src/bimap` in VS Code.
+
+2. `Bimap` implements a bidirectional map from strings to strings with O(1) access.
+
+3. Review its implementation. What bothers you? How would you improve it?
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Use separate types for data-access objects
+
+Not all types can or should be fully encapsulated. In particular, package such as `encoding/json` require you to export struct fields.
+
+However, you should resist the tendency to design types as mere "property bags".
+
+Don't use the same struct type through all the layers (from presentation through to storage) of your application.
+
+If needed, declare dedicated DTO types for translating your encapsulated types to and from other formats (JSON, XML, etc.).
+
+Reassess those decisions only if you observe performance issues.
+
+: using the same type throughout couples your database schema to the representations
+: encapsulation and security issues (mass assignment)
+: unlikely to be the bottleneck
+
+
+
+* Make the zero value useful
+
+There is no such thing as an uninitialized variable in Go. Every type has a _zero_value_.
+
+For many types, the zero value is readily usable without explicit initialization:
+you can simply declare a variable of that type and you safely call its methods.
+
+Some examples and counterexamples from the core library:
+
+  // types whose zero value is readily usable
+  bytes.Buffer
+  sync.WaitGroup
+  sync.Mutex
+  http.Client
+
+  // type whose zero value is NOT readily usable
+  regexp.Regexp
+
+Try to [[https://www.youtube.com/watch?v=PAAkCSZUG1c&t=6m25s][design your types so that the zero value be readily usable]].
+
+
+
+* Why make the zero value useful?
+
+*Convenience*
+
+The zero-value-is-useful property is [[https://golang.org/doc/effective_go#allocation_new][transitive]]: if all the fields of a struct type have a useful zero value, then so does that struct type!
+
+  type SyncedBuffer struct {
+      lock    sync.Mutex
+      buffer  bytes.Buffer
+  }
+
+The need for factory functions is reduced, which leads to a smaller API.
+
+*Correctness*
+
+If you export a type, clients can instantiate the type in its zero value. Therefore,
+making the zero value well-behaved renders the type harder to misuse.
+
+: transitive because a struct's zero value has all the fields zeroed
+: no way in Go to export a type but prevent people from creating the zero value of that type.
+: However, making the zero value useful isn't always possible, esp. for types whose instantiation require some configuration.
+
+
+
+* How to make the zero value useful
+
+Approaches to making a type's zero value useful vary.
+
+Sometimes, you can simply modify the type's structure.
+
+In most cases, you need to lazily initializing fields within methods on that type.
+
+
+
+* Exercise: make Bimap's zero value useful
+
+1. Re-open `go-course-advanced/src/bimap` in VS Code.
+
+2. Is `Bimap`'s zero value usable?
+
+3. If not, make it usable and get rid of factory function `New`.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* What if making the zero value useful isn't possible?
+
+For some types, instantiation requires additional information that only clients can provide. Making their zero value useful isn't possible.
+
+When the zero value of your type isn't usable, document it!
+
+Instruct your clients to instatiate the type via a factory function.
+
+
+
+* Design secure-by-default enums
+
+The zero values of enum types should be secure / low-privilege.
+
+Don't do this:
+
+  type UserType int
+  const (
+    Admin UserType = iota
+    Employee
+    Collaborator
+    Anonymous
+  )
+
+Do this instead:
+
+  type UserType int
+  const (
+    Anonymous UserType = iota
+    Collaborator
+    Employee
+    Admin
+  )
+
+: User with UserType field would otherwise automatically be an admin!
+
+
+
+* Avoid unkeyed literals
+
+Unkeyed struct literals are
+
+- less expressive,
+- more error-prone.
+
+Avoid unkeyed literal, especially for types whose declaration is outside your control:
+
+  type Location struct {
+    Lat  float64
+    Long float64
+  }
+
+  strasbourg := Location{48.5734, 7.7521}       // unkeyed literal (avoid!)
+  paris := Location{Lat: 48.8566, Long: 2.3522} // keyed literal
+
+: In struct literals, you can either specify all the...
+: why error prone: easier to swap the fields,
+: won't be affected by reordering of the fields in the type declaration
+
+
+
+* Trick for disallowing unkeyed struct literals
+
+Adding an unnamed field of type `struct{}` prevents users of your type from
+using unkeyed literals of it:
+
+.play -edit src/unkeyed/main.go /^//START/,/^//END/
+
+
+
+* Avoid global state
+
+Maintaining state at the package level is a [[https://twitter.com/peterbourgon/status/1133492111012184064][recipe for disaster]].
+
+Values of struct types can be stateful; packages shouldn't.
+
+Stay away from `init` functions unless you have to use them.
+
+Don't enumate the _registration_pattern_ (as implemented by the `database/sql` package).
+
+
+
+* Dependency injection
+
+Of course, you shouldn't hardcode dependencies,  since it
+
+- creates too much coupling,
+- hinders testability.
+
+Instead, simply provide dependencies through interface-type fields on your struct types. If no appropriate interface type is available, define your own!
+
+See how the `namecheck` project uses this approach to inject a HTTP client.
+
+No need for dependency-injection frameworks in Go! Interfaces are enough!
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/king.svg 200 _
+
+
+
+
+* Documentation and testing
+
+
+
+* Document your packages
+
+Go takes a lightweight but powerful approach to documentation: the documentation of a package is simply written as comments in the package's source file(s).
+
+Document your packages and everything it exports. [[https://blog.golang.org/godoc][Follow the conventions]].
+
+You can also write executable examples, which become part of your package's documentation and test suite.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/witch-learning.svg 200 _
+
+: package's doc: doc.go
+: each documentation comment is a complete sentence starting with the name of the element it describes.
+: documenting a package doesn't require a lot of effort
+
+
+
+* Exercise: document the twitter package
+
+1. Open `go-course-advanced/src/namecheck` in VS Code.
+
+2. Describe the `twitter` package in a `twitter/doc.go` file.
+
+3. Document each of the identifiers exported by `twitter`.
+
+4. Write an example test for the `IsValid` method in `twitter/example_test.go`.
+
+5. Generate the documentation [[https://pkg.go.dev/golang.org/x/tools/cmd/godoc][using `godoc`]].
+
+6. Browse the generated doc and execute the example test in your browser.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Table-driven subtests
+
+If multiple test functions unduly duplicate the testing logic for different test cases,
+you can gather those test cases under a single test function and run them as _subtests_:
+
+  func TestIsValid(t *testing.T) {
+    cases := []struct{
+      label string
+      username string
+      want bool
+    }{
+      {label: "too long", username: "obviously_longer_than_15_chars"},
+      {label: "too short", username: "foo"},
+    }
+    for c := range cases {
+      t.Run(c.label, func(t *testing.T) {
+        got := twitter.IsValid(c.username)
+        if got != c.want {
+          t.Errorf("twitter.IsValid(%s): got %t; want %t", c.username, got, c.want)
+        }
+      })
+    }
+  }
+
+
+
+* Exercise: switch to table-driven subtests for twitter's IsValid method
+
+1. Open `go-course-advanced/src/namecheck` in VS Code.
+
+2. Coalesce the multiple test functions for `IsValid` into a single test function that uses table-driven subtests.
+
+3. Run those tests.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Test doubles: single-method-interface adapter
+
+To stub or fake a single-method interface like the following,
+
+  type Client interface {
+    Do(req *http.Request) (*http.Response, error)
+  }
+
+define a function type that implements the interface:
+
+  type clientFunc func(*http.Request) (*http.Response, error)
+
+  func (f clientFunc) Do(req *http.Request) (*http.Response, error) {
+    return f(req)
+  }
+
+And define factory functions for that type:
+
+  func ClientWithError(err error) Client { /* ... */ }
+  func ClientWithStatusCode(sc int) Client { /* ... */ }
+
+
+
+* Exercise: write unit tests for IsAvailable
+
+1. Open `go-course-advanced/src/namecheck` in VS Code.
+
+2. Inspect the `stub` package.
+
+3. Write a few table-driven subtests for `twitter`'s IsAvailable method.
+
+4. Run those tests.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Test doubles: generalization to multiple-method interfaces
+
+This pattern can be generalized to multiple-method interfaces by using, instead of a function type, a struct type with function-typed fields:
+
+  type Client interface {
+    Do(*http.Request) (*http.Response, error)
+    Get(string) (*http.Response, error)
+  }
+
+  type stubClient struct {
+    do func(*http.Request) (*http.Response, error)
+    get func(string) (*http.Response, error)
+  }
+
+
+
+* Advanced error handling
+
+
+* Bad error-handling practices
+
+- ignoring errors indiscriminately
+- handling (e.g. logging) then returning an error
+- simply concatenating error messages
+- parsing error messages to access contextual information programmatically
+- calling `os.Exit` or `log.Fatal` deep within your program
+- panicking willy-nilly
+- recovering from panics indiscriminately
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/science/gas-mask.svg 200 _
+
+: source of bugs, mention errcheck
+: e.g. if you log an error, don't bubble it up
+: concat (advocated in gopl): forces your clients to parse your error messages.
+: os.Exit doesn't honor deferred calls
+: panicking willy-nilly: errors are values
+: recover: you cannot be sure whether the programme is in a valid state
+
+
+
+* Report errors appropriate to the level of abstraction
+
+Don't systematically bubble up low-level errors to the caller:
+
+  if err != nil {
+    return err
+  }
+
+Instead, return a higher-level error that "wraps" the lower-level one.
+
+The easy way is to use the `%w` format directive:
+
+  if err != nil {
+      return fmt.Errorf("decompress %v: %v", name, err)
+  }
+
+To provide more information, declare your own type that satisfies `error` and `wrapper`:
+
+  type error interface {
+    Error() string
+  }
+  type wrapper interface {
+    Unwrap() error
+  }
+
+: since Go 1.13
+: if we simply bubble up the low-lever error, we lose the context in which this error occurred
+
+
+
+* Exercise: define a high-level error for IsAvailable
+
+1. Open `go-course-advanced/src/namecheck` in VS Code.
+
+2. Export a struct type from `namecheck` that represents a failure to check the availability of a username.
+
+3. Make it satisfy the `error` interface.
+
+4. Make it satisfy the `wrapper` interface.
+
+5. Rather than bubbling up the low-level error produces by the `http` package in the `IsAvailable` function, return a pointer to a value of your custom error type.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
