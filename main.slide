@@ -450,6 +450,8 @@ This pattern can be generalized to multiple-method interfaces by using, instead 
     get func(string) (*http.Response, error)
   }
 
+See [[https://www.youtube.com/watch?v=yeetIgNeIkc][Mat Ryer - Idiomatic Go Tricks (Golang UK 2016)]] (esp. at [[https://www.youtube.com/watch?v=yeetIgNeIkc&t=8m20s][8'20'']] and [[https://www.youtube.com/watch?v=yeetIgNeIkc&t=16m40s][16'40'']])
+
 
 
 * Advanced error handling
@@ -463,7 +465,7 @@ This pattern can be generalized to multiple-method interfaces by using, instead 
 - parsing error messages to access contextual information programmatically
 - calling `os.Exit` or `log.Fatal` deep within your program
 - panicking willy-nilly
-- recovering from panics indiscriminately
+- [[https://play.golang.org/p/WmGrIUbUdmb][recovering from panics]] indiscriminately
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/science/gas-mask.svg 200 _
 
