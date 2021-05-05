@@ -491,7 +491,7 @@ Instead, return a higher-level error that "wraps" the lower-level one.
 The easy way is to use the `%w` format directive:
 
   if err != nil {
-      return fmt.Errorf("decompress %v: %v", name, err)
+      return fmt.Errorf("failure to check username availability: %w", err)
   }
 
 To provide more information, declare your own type that satisfies `error` and `wrapper`:
