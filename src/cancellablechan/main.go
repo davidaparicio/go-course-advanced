@@ -25,12 +25,12 @@ func main() {
 // START OMIT
 // main is unchanged
 
-func printInts(ctx context.Context) {
+func printInts(ctx context.Context) { // HL
 	ticker := time.NewTicker(100 * time.Millisecond)
 	var i int
 	for {
 		select {
-		case <-ctx.Done():
+		case <-ctx.Done(): // HL
 			ticker.Stop()
 			return
 		case <-ticker.C:

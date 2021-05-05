@@ -23,7 +23,7 @@ func main() {
 	wg.Wait()
 }
 
-func printInts(ctx context.Context) {
+func printInts(ctx context.Context) { // HL
 	for i := 0; ; i++ {
 		if ctx.Err() != nil { // HL
 			return
