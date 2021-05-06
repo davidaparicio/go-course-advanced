@@ -1071,7 +1071,7 @@ We need a way to limit the level of concurrency...
 
 * Pool of workers
 
-One concurrency that allows you to limit the level of concurrency is called _worker_pool_ or _pool_of_workers_.
+One concurrency pattern that allows you to limit the level of concurrency is called _worker_pool_ or _pool_of_workers_.
 
 Instead of treating each job in a dedicated goroutine, spawn a *fixed* number of *worker*goroutines* that all receive jobs via a channel.
 
