@@ -1049,7 +1049,7 @@ Send each result to a channel; a single goroutine receives results from that cha
 
 3. Send a GET to each URL.
 
-4. For each URL, print it to stdout with the value of the response's `Content-Length` header.
+4. For each URL, print it to stdout as well as the size (in bytes) of the response's body.
 
 5. Try your programme on [[https://raw.githubusercontent.com/jpf/domain-profiler/master/list/alexa-top-100][the top 100 Alexa domains]].
 
@@ -1122,7 +1122,7 @@ Metaphor: "Due to the health crisis, no more than n people allowed at a time."
 Declare a buffered channel of empty structs whose capacity dictates the limit of concurrent access to the resource of interest:
 
   const maxOutstanding = 16
-  sem := make(chan struct{})
+  sem := make(chan struct{}, maxOutstanding)
 
 Acquire and release a "token" before and after each access to the resource:
 
