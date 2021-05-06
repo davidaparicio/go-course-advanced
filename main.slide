@@ -809,3 +809,328 @@ We'll talk about `Context`'s secondary (more controversial) purpose later.
 This is more idiomatic than using the `Err` method, though:
 
 .play -edit src/cancellablechan/main.go /^//START/,/^//END/
+
+
+
+* Deriving contexts
+
+You can derive a new context from an existing one via one of three factory functions:
+
+  func WithCancel(parent Context) (ctx Context, cancel CancelFunc)
+  func WithDeadline(parent Context, d time.Time) (Context, CancelFunc)
+  func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
+
+The `CancelFunc`-typed result, which is simply a `func()`, *must* be called at some stage.
+The best thing to do is call it with `defer` and forget about it:
+
+  ctx, cancel = context.WithCancel(ctx)
+  defer cancel()
+
+Important: If you fail to cancel a context that you've derived, you'll leak resources.
+
+.image https://www.globalnerdy.com/wp-content/uploads/2017/08/gopher-this-is-fine.jpg 150 _
+
+
+
+* Contexts form a tree
+
+In memory, contexts form a tree whose root is a special context: `context.Background`.
+
+Cancellation signals flow from top to bottom: cancelling a node of the context tree also cancels all of its children.
+
+.image img/context_tree.svg 400 _
+
+: child / parent context
+: background isn't cancellable
+
+
+
+* Designing a cancellable function
+
+A function that must be cancellable should accept a `Context` parameter.
+
+By convention, that parameter is the function's first and is named `ctx`:
+
+  IsAvailable(ctx context.Context, username string) (bool, error)
+
+You should design your function to be cancellable if
+
+- it's IO-bound (e.g. it sends HTTP requests, writes to the DB, ...),
+- it's CPU-bound but possibly long-running (e.g. it performs some number crunching).
+
+
+
+
+
+* Exercise: make IsAvailable cancellable
+
+1. Open `go-course-advanced/src/namecheck` in VS Code.
+
+2. Modify the signature of `namecheck.Availabler`'s method so that it also accept a `Context` parameter.
+
+3. Consult the `net/http` doc to figure out how to wire a context with a HTTP request.
+
+4. In `twitter`'s `IsAvailable` method, use the context to cancel the HTTP request.
+
+5. Do the same for `github`'s `IsAvailable` method.
+
+6. Fix the CLI and server executables.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+: IsAvailable is IO-bound!
+
+
+
+* Context.TODO()
+
+If you're calling a function that takes a `Context` parameter but you're unsure where that context should come from, don't pass it `context.Background()`.
+
+Pass it the dummy context `context.TODO()` for the time being, and revisit the code later, once you've figured out where to obtain a proper context from.
+
+.image https://blog.golang.org/gopher/plush.jpg 300 _
+
+
+
+* Context should be passed to functions, not stored in structs
+
+Pass contexts to functions; don't store contexts in struct fields.
+
+In rare cases, in order not to break an existing API, you may have to store a context in a struct, but that's the exception that confirms the rule.
+
+See [[https://blog.golang.org/context-and-structs][Contexts and structs]] on the Golang blog.
+
+: unless you have to
+
+
+
+* Exercise: cancel IsAvailable if the request gets canceled
+
+1. Open `go-course-advanced/src/namecheck` in VS Code.
+
+2. Consult the `net/http` doc to figure out how to extract a context from a HTTP request inside a handler.
+
+3. In `cmd/server/main.go`, pass that context to `IsAvailable`.
+
+4. Start the server.
+
+5. Exercise the `check` endpoint in your browser and immediately close your browser tab.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* General advice on concurrency
+
+
+* Don't go overboard with goroutines
+
+Use goroutines with parcimony. Not all workloads have a structure that lends itself to concurrent composition.
+
+Familiarize yourself with [[https://en.wikipedia.org/wiki/Amdahl%27s_law][Amdahl's law]]; you cannot beat it!
+
+Keep readability in mind: a concurrent programme must be understandable. Use proven and tested concurrency patterns.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/sage.svg 200 _
+
+
+
+* Channel capacity often affects correctness
+
+Why does this program deadlock?
+
+.play -edit src/deadlockchan/main.go /^//START/,/^//END/
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/dandy/umbrella.svg 200 _
+
+: buffered channel of 1 vs. unbuffered channel
+
+
+
+* Exercise: debug this ping-pong game
+
+1. Open [[https://play.golang.org/p/n7XQ_TdOY4t][https://play.golang.org/p/n7XQ_TdOY4t]].
+
+2. The game ends with a deadlock. Can you see why?
+
+3. Discuss and fix the programme.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+: two goroutines exchanging one value over and over
+: pointer element to reduce memory footprint
+: show that deadlock if you never throw the ball on the table
+: one player terminates while the other is left holding the ball
+: one possibility: buffer size of 1, but no guarantee that the same player will play twice in a row
+: non-blocking send by adding a select statement
+: solution: https://play.golang.org/p/RVdBZVVbkj3
+
+
+
+* Avoid time.Tick
+
+`time.Tick` is a [[https://golang.org/pkg/time/#Tick][convenient function]] for perfoming some work at regular intervals:
+
+.play -edit src/tick/main.go /^//START/,/^//END/
+
+Unfortunately, `time.Tick` always leaks a goroutine. Use a `time.Ticker` instead:
+
+.play -edit src/ticker/main.go /^//START/,/^//END/
+
+: ...and don't forget to stop it, at some stage:
+
+
+
+* Avoid time.After
+
+Similarly, under the hood, `time.After` launches a goroutine that only terminates after the specified duration.
+
+Instead, favor the use of a `time.Timer` to terminate the goroutine as soon as possible.
+
+: goroutine alive for longer than needed
+
+
+
+
+* Leave concurrency to the caller
+
+Few libraries should expose a concurrent API. Favor synchronous APIs,
+which your clients can always call in a concurrent fashion.
+
+Don't systematically design your data structures as concurrency-safe.
+Leave the option to do that to your clients.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/sage.svg 200 _
+
+
+
+* Don't assume concurrency safety
+
+None of the Go's primitives types are _concurrency-safe_.
+
+In general, you need to serialize access to variables in order to avoid data races.
+
+Types that are concurrency-safe are advertised as such in their documentation.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/sage.svg 200 _
+
+: sync.Map, my generic Bimap
+
+
+
+* Concurrency patterns
+
+
+
+* Fan out / fan in
+
+This concurrency pattern is used in `namecheck`'s server.
+
+*Fan*out*
+
+Given a number of jobs whose number if not necessarily known in advance,
+start as many goroutines as jobs and handle each job in its dedicated goroutine.
+
+*Fan*in*
+
+Send each result to a channel; a single goroutine receives results from that channel and aggregates them.
+
+.image img/fan_out_fan_in.svg 200 _
+
+: implemented in server and CLI
+
+
+
+* Exercise: process URLs with a fan out
+
+1. Start a new project named `tinyscraper` in VS Code.
+
+2. Write an executable that reads hosts from stdin (use a `bufio.Scanner`).
+
+3. Send a GET to each URL.
+
+4. For each URL, print it to stdout with the value of the response's `Content-Length` header.
+
+5. Try your programme on [[https://raw.githubusercontent.com/jpf/domain-profiler/master/list/alexa-top-100][the top 100 Alexa domains]].
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Limitations of the fan-out pattern
+
+Unfortunately, fan out suffers from one big problem: unbounded concurrency.
+
+If there are many jobs and handling each job takes a long time, we might start too many goroutines at once, which may end up consuming a prohibitive amount of resources!
+
+We need a way to limit the level of concurrency...
+
+.image https://www.globalnerdy.com/wp-content/uploads/2017/08/gopher-this-is-fine.jpg 300 _
+
+
+
+* Pool of workers
+
+One concurrency that allows you to limit the level of concurrency is called _worker_pool_ or _pool_of_workers_.
+
+Instead of treating each job in a dedicated goroutine, spawn a *fixed* number of *worker*goroutines* that all receive jobs via a channel.
+
+Terminate the workers when the jobs channel gets closed.
+
+: show them in Playground
+
+
+
+* Exercise: use a pool of workers
+
+1. Re-open your `tinyscraper` project in VS Code.
+
+2. Implement the worker-pool pattern.
+
+3. Try your programme on [[https://raw.githubusercontent.com/jpf/domain-profiler/master/list/alexa-top-100][the top 100 Alexa domains]].
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Exercise: write each result to a file
+
+1. Re-open your `tinyscraper` project in VS Code.
+
+2. Instead of printing to the stdout, write each result to a file.
+
+3. Try your programme on [[https://raw.githubusercontent.com/jpf/domain-profiler/master/list/alexa-top-100][the top 100 Alexa domains]].
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Limitations of the worker-pool pattern
+
+The worker goroutines are idle when there are no jobs. What if they take up a lot of memory that could be put to use elsewhere in the programme?
+
+What if, rather than limit the level of concurrency, we need to limit access to some resource (e.g. file descriptors, database connection)?
+
+Any ideas?
+
+
+
+* Counting semaphore
+
+Metaphor: "Due to the health crisis, no more than n people allowed at a time."
+
+Declare a buffered channel of empty structs whose capacity dictates the limit of concurrent access to the resource of interest:
+
+  const maxOutstanding = 16
+  sem := make(chan struct{})
+
+Acquire and release a "token" before and after each access to the resource:
+
+  sem <- struct{}{} // acquire a token
+  // ...            // access the resource release the token
+  <-sem             // release the token
+
+Each send operation will block for as long as the channel's buffer is full!
+
+: the send
+: covid shop
