@@ -785,9 +785,9 @@ If you're careless and spawn goroutines willy-nilly, you expose yourself to corr
 The `context` package provides a `Context` type.
 
   type Context interface {
-    Deadline() (deadline time.Time, ok bool)
     Done() <-chan struct{}
     Err() error
+    Deadline() (deadline time.Time, ok bool)
     Value(key interface{}) interface{}
   }
 
@@ -798,17 +798,28 @@ We'll talk about `Context`'s secondary (more controversial) purpose later.
 
 
 
-* Detecting context cancellation via the Err method
+* Reactive cancellation detection via the Done method
+
+.play -edit src/cancellablechan/main.go /^//START/,/^//END/
+
+
+
+* Reactive cancellation detection via the Err method
+
+The `Err()` method returns `nil` before the context gets canceled or times out,
+and either `context.Canceled` or `context.DeadlineExceeded` afterwards.
 
 .play -edit src/cancellableerr/main.go /^//START/,/^//END/
 
+This approach for detecting a cancellation signal is useful when your code involves no channel communication.
 
 
-* Detecting context cancellation via the Done method
 
-This is more idiomatic than using the `Err` method, though:
+* Anticipation of cancellation via the Deadline method
 
-.play -edit src/cancellablechan/main.go /^//START/,/^//END/
+.play -edit src/cancellabledeadline/main.go /^//START/,/^//END/
+
+: if you're about to launch a task that you know will finish after the deadline, you could return immediately instead
 
 
 
@@ -834,11 +845,11 @@ Important: If you fail to cancel a context that you've derived, you'll leak reso
 
 * Contexts form a tree
 
-In memory, contexts form a tree whose root is a special context: `context.Background`.
+In memory, contexts form a tree whose root is a special context: `context.Background()`.
 
-Cancellation signals flow from top to bottom: cancelling a node of the context tree also cancels all of its children.
+Cancellation signals flow from top to bottom: cancelling a node of the context tree also cancels all of the contexts derived from it.
 
-.image img/context_tree.svg 400 _
+.image img/context_tree.svg 300 _
 
 : child / parent context
 : background isn't cancellable
@@ -853,12 +864,16 @@ By convention, that parameter is the function's first and is named `ctx`:
 
   IsAvailable(ctx context.Context, username string) (bool, error)
 
-You should design your function to be cancellable if
-
-- it's IO-bound (e.g. it sends HTTP requests, writes to the DB, ...),
-- it's CPU-bound but possibly long-running (e.g. it performs some number crunching).
 
 
+* Embrace the cancel culture!
+
+Any of your functions that is
+
+- IO-bound (e.g. it sends HTTP requests, writes to the DB, ...), or
+- CPU-bound but possibly long-running (e.g. it performs some number crunching),
+
+should be cancellable.
 
 
 
@@ -868,9 +883,9 @@ You should design your function to be cancellable if
 
 2. Modify the signature of `namecheck.Availabler`'s method so that it also accept a `Context` parameter.
 
-3. Consult the `net/http` doc to figure out how to wire a context with a HTTP request.
+3. Consult the `net/http` doc to figure out how to attach a context to a HTTP request.
 
-4. In `twitter`'s `IsAvailable` method, use the context to cancel the HTTP request.
+4. In `twitter`'s `IsAvailable` method, propagate the context to the HTTP request.
 
 5. Do the same for `github`'s `IsAvailable` method.
 
@@ -879,14 +894,19 @@ You should design your function to be cancellable if
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
 : IsAvailable is IO-bound!
+: print the error to check whether it was cancelled
 
 
 
 * Context.TODO()
 
-If you're calling a function that takes a `Context` parameter but you're unsure where that context should come from, don't pass it `context.Background()`.
+Never use `nil` where a `Context` is required!
 
-Pass it the dummy context `context.TODO()` for the time being, and revisit the code later, once you've figured out where to obtain a proper context from.
+If you're unsure which context to use somewhere, avoid using `context.Background()`.
+
+Instead, for the time being, use the dummy context `context.TODO()`.
+
+Revisit the code later, once you've figured out where to obtain a proper context from.
 
 .image https://blog.golang.org/gopher/plush.jpg 300 _
 
@@ -917,6 +937,104 @@ See [[https://blog.golang.org/context-and-structs][Contexts and structs]] on the
 5. Exercise the `check` endpoint in your browser and immediately close your browser tab.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Storing data in contexts
+
+The `context` package also provides a way of storing key-value pairs in contexts for subsequent retrieval and use across API boundaries.
+
+`context.WithValue` allows you to derive a new context that contains a key-value pair:
+
+  func WithValue(parent context.Context, key, val interface{}) context.Context
+
+The value can later to retrieved via the `Value` method on the context in question or any context derived from it:
+
+  type Context interface {
+    // other methods omitted
+    Value(k interface{}) interface{}
+  }
+
+
+
+* Context: cancellation signal or value bag?
+
+The ability to store values in contexts is completely orthogonal to cancellation!
+
+Because of its hybrid purpose, the `context.Context` type is quite controversial:
+
+- [[https://dave.cheney.net/2017/01/26/context-is-for-cancelation][Dave Cheney - Context is for cancellation]]
+- [[https://dave.cheney.net/2017/08/20/context-isnt-for-cancellation][Dave Cheney - Context isn't for cancellation]]
+- [[https://faiface.github.io/post/context-should-go-away-go2/][Michal Štrba - Context should go away for Go 2]]
+
+.image http://laboiteaimages.alainkorkos.fr/public/2019/le_cul_entre_deux_chaises/.c_u.jpg 300 _
+
+: cul entre deux chaises
+
+
+* Storing values in context: caveats
+
+Relying on context values suffers from several limitations:
+
+- `WithValue` and `Value` are not typesafe and their use requires some care.
+- There is no compile-time guarantee that a specific value pair will be present.
+- There is no way of enumerating the key-value pairs.
+- Functions that overrely on context values have a less expressive API.
+- Lookup performance can be poor (linked-list implementation).
+
+: poof performance: linked-list implementation
+
+
+
+* Context values should only be request-scoped and informative
+
+Context values let you smuggle anything in a function without changing its signature.
+
+Don't take this as a license to avoid proper dependency inversion!
+
+Context values should inform, not control the logic:
+
+- Good candidates: metrics, trace ID, auth token
+
+- Bad candidates: logger, database connection, server options
+
+.image https://api.gretchenrubin.com/wp-content/uploads/sites/2/2015/03/Gollum-Ring.jpg 250 _
+
+
+
+* Quiz: why is this careless?
+
+You obtain a context from somewhere and pass it to your function:
+
+  func foo(ctx context.Context) error {
+    ctx = context.WithValue("token", "xxxx-xxxx")
+    // ...
+  }
+
+Do you see the problem?
+
+.image https://cdn.shopify.com/s/files/1/0066/2116/7677/products/sherlock_1080x.png 300 _
+
+: how do you know you're not clobbering an existing key-value pair
+
+
+* Preventing key collisions across packages
+
+To guarantee that no other package uses the same context key as yours,
+
+- define an unexported key type,
+- export a typesafe factory function and a typesafe accessor function.
+
+.code src/contextvalue/auth/auth.go
+
+: imagine what would happen if other people used just a string key type
+
+
+
+* Preventing key collisions across packages (cont'd)
+
+.code src/contextvalue/main.go /^//START/,/^//END/
+
 
 
 
@@ -1049,7 +1167,7 @@ Send each result to a channel; a single goroutine receives results from that cha
 
 3. Send a GET to each URL.
 
-4. For each URL, print it to stdout as well as the size (in bytes) of the response's body.
+4. For each URL, print it to stdout as well as the size (in bytes) of the response's body; you can use `io.Copy` and `io.Discard` for that.
 
 5. Try your programme on [[https://raw.githubusercontent.com/jpf/domain-profiler/master/list/alexa-top-100][the top 100 Alexa domains]].
 
@@ -1067,6 +1185,9 @@ We need a way to limit the level of concurrency...
 
 .image https://www.globalnerdy.com/wp-content/uploads/2017/08/gopher-this-is-fine.jpg 300 _
 
+: or compete for CPU (you can only have NUMMAXPROCS goroutines in parallel)
+: potentially expensive context switches if CPU-bound workload
+
 
 
 * Pool of workers
@@ -1076,6 +1197,8 @@ One concurrency pattern that allows you to limit the level of concurrency is cal
 Instead of treating each job in a dedicated goroutine, spawn a *fixed* number of *worker*goroutines* that all receive jobs via a channel.
 
 Terminate the workers when the jobs channel gets closed.
+
+.image https://miro.medium.com/max/1600/1*ugshDOhXfC287WWhG4IfSA.jpeg 250 _
 
 : show them in Playground
 
@@ -1134,3 +1257,386 @@ Each send operation will block for as long as the channel's buffer is full!
 
 : the send
 : covid shop
+
+
+
+* Exercise: use a semaphore
+
+1. Re-open your `tinyscraper` project in VS Code.
+
+2. Implement the semaphore pattern.
+
+3. Try your programme on [[https://raw.githubusercontent.com/jpf/domain-profiler/master/list/alexa-top-100][the top 100 Alexa domains]].
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Limitations of the basic semaphore
+
+Attempts to acquire a token will block if the semaphore is already at capacity!
+
+As a result, under increased load,
+
+- some requests risk not being handled quickly,
+- the number of concurrent in-flight requests is unbounded.
+
+Backpressure / load shedding may be more judicious than blocking.
+
+.image https://www.preparelovepraise.org/uploads/7/8/1/0/78107546/9894983_orig.jpg 300 _
+
+
+
+* Exercise: implement load shedding
+
+1. Open `go-course-advanced/src/loadshedding` in VS Code. The program is a simple server that uses a semaphore to limit the number of concurrent requests.
+
+2. Modify the handler to return an immediate `503`Service`Unavailable` response if the semaphore is at capacity.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Reducing tail latency with redundant requests
+
+If some data of interest is replicated across multiple data sources,
+you can reduce tail latency by sending [[https://www.youtube.com/watch?v=f6kdp27TYZs&t=31m15s][redundant requests]]:
+
+- Issue the same request to each data source concurrently.
+- Accept the first response and cancel the requests still in flight.
+- Give up if no response is received before a given deadline.
+
+.image https://miro.medium.com/max/4800/1*-bo7H329eM0O1eL_ASBVOA.jpeg 300 _
+
+
+
+* Redundant requests: an example
+
+1. Open `go-course-advanced/src/redundantreq` in VS Code. The `main` function queries a single data center.
+
+2. Compile the program and time its execution.
+
+3. In `main`, create a few more data centers ("Paris", "Roubaix", etc.) where the data of interest is replicated. Apply the pattern discussed on the previous slide.
+
+5. Compile the program and time its execution. Any improvement?
+
+6. Discuss how you would improve the pattern.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 150 _
+
+: careful not to leak goroutines
+: one solution: https://play.golang.org/p/FoKJmaIK9Ze
+: could do something more clever: only send a secondary request if no response within 95% percentile of response time
+
+
+
+* Actors in Go
+
+Some problems lend themselves to the [[https://en.wikipedia.org/wiki/Actor_model][_actor_model_]].
+
+An actor is an encapsulated unit of computation that reacts to messages it receives by altering its state and behavior and perhaps sending messages to other actors.
+
+Go channels can be used to implement an actor's message queues.
+
+Actors give you linearized access to some state for free; no need for locking!
+
+See [[https://www.youtube.com/watch?v=LHe1Cb_Ud_M][Peter Bourgon - Way to do things]].
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/dandy/umbrella.svg 200 _
+
+
+
+* Exercise: state machine
+
+1. Open `go-course-advanced/src/statemachine` in VS Code.
+
+2. Inspect the code. The `StateMachine` type models a simple ON/OFF switch that counts the number of times it's been flicked on; a mutex is used for concurrency safety.
+
+3. Add a field named `actions` of type `chan`func()` and initialize that field.
+
+4. Write a method `Run` that takes a `Context` as parameter and executes each action received on the `actions` channel.
+
+5. Modify the implementation of the `Increment` and `Decrement` methods accordingly.
+
+6. Remove the mutex field, which is now superfluous.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 150 _
+
+: solution: https://play.golang.org/p/Hdt-MWGxYUz
+
+
+
+* Quiz: is there a data race?
+
+Is there a data race in the following program? Why or why not?
+
+.play -edit src/concurrentslice/main_race.go /^//START/,/^//END/
+
+
+
+* Quiz: is there a data race? (cont'd)
+
+What about the following program? Why or why not?
+
+.play -edit src/concurrentslice/main_no_race.go /^//START/,/^//END/
+
+
+
+* Slices and concurrency safety
+
+Appending to a slice or modifying the same entry of a slice from multiple goroutines without synchronization results in data races.
+
+However, writing to a dedicated entry of a slice (or array) from a goroutine is concurrency-safe!
+
+This is useful if you already know the number of concurrent tasks to perform.
+
+
+
+* Single execution with sync.Once
+
+`sync.Once` is a concurrency-safe abstraction for executing a most one action.
+
+For a given instance `once` of `sync.Once`, only the first call to `once.Do(f)` will invoke function `f`, even if `f` has a different value in each invocation.
+
+.play -edit src/once/main.go /^//START/,/^//END/
+
+`sync.Once` is intended for initialization that must be run exactly once. It's useful for [[https://www.youtube.com/watch?v=5DVV36uqQ4E&t=20m40s][delayed initialization in HTTP handlers]] as a means of reducing a server's startup time.
+
+: don't abuse it: avoid closing a channel from sync.Once; feels like a hack
+
+
+
+* Exercise: reduce a server's startup time with sync.Once
+
+1. Open `go-course-advanced/src/handleronce` in VS Code.
+
+2. Inspect the code. Note that the initialization of the Foo handler takes must longer than the Bar handler's.
+
+3. Compile the program and run the executable. What happens?
+
+4. Use a `sync.Once` to perform the initialization of the Foo handler in a lazy fashion.
+
+5. Compile the program and run the executable again. Check that the server's startup time is much reduced.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Micro-optimization
+
+
+
+* Word size
+
+The size of a _word_ (4 or 8 bytes) depends on your compiler and architecture.
+
+The word size corresponds to the size of `int` and `uint` (and `uintptr`).
+
+You can compute it as a constant:
+
+  const uintSizeInBytes = 4 << ((^uint(0)) >> 32 & 1)
+
+It would be a mistake to convert an `int64` to an `int` without making sure that the word size on the target machine is 8 bytes!
+
+.image https://www.globalnerdy.com/wp-content/uploads/2017/08/gopher-this-is-fine.jpg 200 _
+
+
+
+* Alignment in memory
+
+All values must start on a word boundary in memory. No exceptions! (Why?)
+
+*Arrays*
+
+Array values must start on a multiple of the size of their element type.
+
+For instance, an array of `int64` must start on a multiple of 8 bytes in memory.
+
+*Struct*types*
+
+Struct types must start on a multiple of the size of their largest field.
+
+*Other*types*
+
+The values of all the other types must start on a multiple of their size in memory.
+
+For instance, an `int32` must start on a multiple of 4 bytes in memory.
+
+
+
+* Struct memory layout
+
+To respect the alignment rules, the compiler may have to add some _padding_.
+
+As a result, the order of a struct's fields affects the struct's size in memory!
+
+You can visualize a struct's memory layout with the structlayout utility:
+
+  got get honnef.co/go/tools/cmd/structlayout
+
+To minimize padding, order the fields of your struct in decreasing size order:
+largest field first, smallest field last.
+
+.image https://miro.medium.com/max/4800/1*OxWM0qyTBnb6WfSEw-T9sg.jpeg 200 _
+
+
+
+* Exercise: determine and optimize a struct type's memory layout
+
+1. Open `go-course-advanced/src/memorylayout` in VS Code.
+
+2. If you disregard padding, how many bytes does a value of `User` take in memory?
+
+3. What if you include padding?
+
+4. Check the actual size with `unsafe.Sizeof`.
+
+5. Create an alternative type named `User2` whose memory layout minimizes padding.
+
+6. Check the memory layouts of `User` and `User2` with `structlayout`.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+: structlayout mymodulepath User
+
+
+
+* Microbenchmarks
+
+In addition to tests, the `testing` package allows you to write micro-benchmarks.
+
+Benchmark functions
+
+- are normal Go functions written in a "_test" suffixed source file;
+- are usually written in the same package as the production code;
+- must start with "Benchmark" followed by an uppercase letter;
+- must take a single parameter of type `*testing.B` and return no results.
+
+
+
+* Anatomy of microbenchmark function
+
+The _operation_ to benchmark is performed within a loop controlled by `b.N`:
+
+  func BenchmarkContainsNoIllegalPattern(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        containsNoIllegalPattern("abcTwitTerabd")
+    }
+  }
+
+If the benchmark function requires some expensive setup likely to skew the results,
+you can reset and/or temporarily stop the timer:
+
+
+  func BenchmarkX(b *testing.B) {
+    // expensive setup
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        b.StopTimer()
+        // expensive setup
+        b.StartTimer()
+        containsNoIllegalPattern("abcTwitTerabd")
+    }
+  }
+
+
+* Running microbenchmarks
+
+A good command for running benchmarks is the following:
+
+  go test -run=^$ -bench . -benchmem -benchtime=3s
+
+Explanation of the different flags:
+
+- `-run=^$` is to prevent normal test functions from running.
+- `-bench` takes a regexp corresponding to the names of benchmark functions to run.
+- `-benchmem` outputs additional information about memory allocations.
+- `-benchtime` controls the length each benchmark function must be run for.
+
+
+
+* Interpreting microbenchmark results
+
+  go test -run=^$ -bench . -benchmem -benchtime=3s
+
+will print something like
+
+  BenchmarkX-8     4811384    249.7 ns/op     0 B/op   0 allocs/op
+  BenchmarkY-8    36707469    94.93 ns/op    16 B/op   1 allocs/op
+
+The respective columns correspond to
+
+- the name of the benchmark function suffixed by the the value of `GOMAXPROCS` used,
+- the number of operations performed during the whole benchmark,
+- the average time taken by each _operation_ (one iteration of the benchmark loop),
+- the number of bytes allocated per operation,
+- the number of allocations per operation.
+
+
+
+* Exercise: benchmark an alternative implementation
+
+1. Open `go-course-advanced/src/namecheck` in VS Code.
+
+2. While keeping the original `containsNoIllegalPattern` function, write an alternative implementation.
+
+3. Write benchmarks for the two competing implementations.
+
+4. Run those benchmarks.
+
+5. Which implementation do you favor? Why?
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Exercise: optimize the stringset library
+
+1. Open `go-course-advanced/src/stringset` in VS Code. Get familiar with the code
+
+2. Without changing the package's API, identify areas for improvement in the implementation.
+
+3. Perform those improvements one by one.
+
+4. Don't guess! Validate they are indeed improvements with microbenchmarks.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+: used quite extensively in a security tool
+
+
+
+* Reducing the size of binaries
+
+Go executables are statically linked: they embark all they need for the program to run.
+As a result, their size can perceived as greater than needed.
+
+You can reduce the size of a Go binary by [[https://golang.org/cmd/link/#hdr-Command_Line][omiting symbol tables and debug information]]:
+
+  go build -ldflags="-s -w" main.go
+
+You can further reduce the size of Linux binaries with [[https://upx.github.io/][UPX (the Ultimate Packer for eXecutables)]]:
+
+  upx --brute main
+
+See [[https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/][Filippo Valsorda - Shrink your Go binaries with this one weird trick]].
+
+: smaller size => less startup time in Docker environment
+: executable autoportant
+: runtime: Go scheduler, GC, memory allocator, etc.
+: compare to Java, though. Whole JVM! A bit better since Java 9, I guess.
+
+
+
+* Exercise: reduce the size of a "Hello, World!" program
+
+1. Write a simple "Hello, World!" program.
+
+2. Compile it for Linux. Inspect the size of the resulting binary.
+
+3. Recompile the program but remove the symbol tables and debug info. Is the resulting binary smaller. By how much?
+
+4. Install UPX. Run upx on the binary resulting from step 3. Is the resulting binary smaller?
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
