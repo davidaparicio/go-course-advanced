@@ -1350,7 +1350,7 @@ See [[https://www.youtube.com/watch?v=LHe1Cb_Ud_M][Peter Bourgon - Way to do thi
 
 1. Open `go-course-advanced/src/statemachine` in VS Code.
 
-2. Inspect the code. The `StateMachine` type models a simple ON/OFF switch that counts the number of times it's been flicked on; a mutex is used for concurrency safety.
+2. Inspect the code. The `StateMachine` type models a simple counter whose operations (increment and decrement) are made concurrency-safe through the use of a mutex.
 
 3. Add a field named `actions` of type `chan`func()` and initialize that field.
 
