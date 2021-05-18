@@ -1007,7 +1007,7 @@ Context values should inform, not control the logic:
 You obtain a context from somewhere and pass it to your function:
 
   func foo(ctx context.Context) error {
-    ctx = context.WithValue("token", "xxxx-xxxx")
+    ctx = context.WithValue(ctx, "token", "xxxx-xxxx")
     // ...
   }
 
