@@ -12,12 +12,11 @@ func main() {
 	const n = 10
 	wg.Add(n)
 	for i := 0; i < n; i++ {
-		i := i
-		go func() {
+		go func(j int) {
 			defer wg.Done()
-			f := func() { fmt.Printf("Only once: %d\n", i) }
+			f := func() { fmt.Printf("Only once: %d\n", j) }
 			once.Do(f) // HL
-		}()
+		}(i)
 	}
 	wg.Wait()
 	// END OMIT

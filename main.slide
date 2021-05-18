@@ -1396,13 +1396,24 @@ This is useful if you already know the number of concurrent tasks to perform.
 
 `sync.Once` is a concurrency-safe abstraction for executing a most one action.
 
-For a given instance `once` of `sync.Once`, only the first call to `once.Do(f)` will invoke function `f`, even if `f` has a different value in each invocation.
+For a given instance `once` of `sync.Once`,
+
+- only the first call to `once.Do(f)` will invoke function `f`, even if `f` has a different value in each invocation, and
+- `once.Do(f)` returns after `f` returns.
 
 .play -edit src/once/main.go /^//START/,/^//END/
 
-`sync.Once` is intended for initialization that must be run exactly once. It's useful for [[https://www.youtube.com/watch?v=5DVV36uqQ4E&t=20m40s][delayed initialization in HTTP handlers]] as a means of reducing a server's startup time.
 
-: don't abuse it: avoid closing a channel from sync.Once; feels like a hack
+
+* Use cases for sync.Once
+
+`sync.Once` is intended for initialization that must be run exactly once.
+
+It's particularly useful for [[https://www.youtube.com/watch?v=5DVV36uqQ4E&t=20m40s][delayed initialization in HTTP handlers]] as a means of reducing a server's startup time.
+
+.image https://miro.medium.com/max/4800/1*-bo7H329eM0O1eL_ASBVOA.jpeg 200 _
+
+Don't abuse it, though. In particular, using a `sync.Once` to ensure a channel is closed no more than once feels hacky!
 
 
 
@@ -1472,7 +1483,7 @@ As a result, the order of a struct's fields affects the struct's size in memory!
 
 You can visualize a struct's memory layout with the structlayout utility:
 
-  got get honnef.co/go/tools/cmd/structlayout
+  go get honnef.co/go/tools/cmd/structlayout
 
 To minimize padding, order the fields of your struct in decreasing size order:
 largest field first, smallest field last.
