@@ -1530,25 +1530,14 @@ Benchmark functions
 The _operation_ to benchmark is performed within a loop controlled by `b.N`:
 
   func BenchmarkContainsNoIllegalPattern(b *testing.B) {
+    usernames := []string{"", "jub0bs", "abcTwitTerabd"}
     for i := 0; i < b.N; i++ {
-        containsNoIllegalPattern("abcTwitTerabd")
+      for _, username := range usernames {
+        containsNoIllegalPattern(username)
+      }
     }
   }
 
-If the benchmark function requires some expensive setup likely to skew the results,
-you can reset and/or temporarily stop the timer:
-
-
-  func BenchmarkX(b *testing.B) {
-    // expensive setup
-    b.ResetTimer()
-    for i := 0; i < b.N; i++ {
-        b.StopTimer()
-        // expensive setup
-        b.StartTimer()
-        containsNoIllegalPattern("abcTwitTerabd")
-    }
-  }
 
 
 * Running microbenchmarks
