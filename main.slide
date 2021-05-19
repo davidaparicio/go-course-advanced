@@ -1692,7 +1692,7 @@ To produce a CPU profile of an executable, first import `runtime/pprof`.
 
 Then, at the beginning of the `main` function,
 
-- open/create a write-only file named "cpu.pprof" (by convention),
+- create a file named "cpu.pprof" (by convention),
 - invoke function `pprof.StartCPUProfile` and pass it the file,
 - invoke function `pprof.StopCPUProfile` in a deferred call.
 
