@@ -1742,7 +1742,7 @@ You can also run `pprof` as a server, for visualization in your browser:
 
 * net/http/pprof
 
-For server code, you can expose `pprof` profiles through endpoints on the `/debug/proof/` path.
+For server code, you can expose `pprof` profiles through endpoints on the `/debug/pprof/` path.
 
 A blank import is the simplest way to do that:
 
@@ -1987,7 +1987,7 @@ Explicitly set the content type on all responses. Use a middleware if you have t
 
 
 
-* Exercise: content sniffing leads to XSS
+* Exercise: content sniffing leading to XSS
 
 1. Open `go-course-advanced/src/sniffing` in VS Code.
 

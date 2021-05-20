@@ -9,10 +9,9 @@ import (
 )
 
 const (
-	output     = "out.png"
-	width      = 2048
-	height     = 2048
-	numWorkers = 8
+	output = "out.png"
+	width  = 2048
+	height = 2048
 )
 
 func main() {
