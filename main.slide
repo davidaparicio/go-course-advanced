@@ -1067,7 +1067,7 @@ Why does this program deadlock?
 
 * Exercise: debug this ping-pong game
 
-1. Open [[https://play.golang.org/p/n7XQ_TdOY4t][https://play.golang.org/p/n7XQ_TdOY4t]].
+1. Open [[https://play.golang.org/p/n7XQ_TdOY4t][this Playground]]. It models a ping-pong game adapted from ([[https://talks.golang.org/2013/advconc.slide#6][a talk by Sameer Ajmani]]).
 
 2. The game ends with a deadlock. Can you see why?
 
