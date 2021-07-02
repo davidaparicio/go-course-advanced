@@ -370,8 +370,9 @@ you can gather those test cases under a single test function and run them as _su
       username string
       want bool
     }{
-      {label: "too long", username: "obviously_longer_than_15_chars"},
-      {label: "too short", username: "foo"},
+      {label: "too long", username: "obviously_longer_than_15_chars", want: false},
+      {label: "too short", username: "foo", want: false},
+      {label: "valid", username: "jub0bs", want: true},
     }
     for _, c := range cases {
       f := func(t *testing.T) {
