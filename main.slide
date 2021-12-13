@@ -1,5 +1,5 @@
 Formation Go avancé
-01 January 2021
+13 December 2021
 
 Julien Cretel
 jcretel-infosec@protonmail.com
@@ -8,7 +8,7 @@ https://jub0bs.com
 
 * Setup
 
-- Go (>= 1.16)
+- Go (>= 1.17)
 - Visual Studio Code
 - [[https://code.visualstudio.com/docs/languages/go][Go extension for Visual Studio Code]]
 - Git
@@ -299,7 +299,7 @@ Values of struct types can be stateful; packages shouldn't.
 
 Stay away from `init` functions unless you have to use them.
 
-Don't enumate the _registration_pattern_ (as implemented by the `database/sql` package).
+Don't emulate the _registration_pattern_ (as implemented by the `database/sql` package).
 
 
 
