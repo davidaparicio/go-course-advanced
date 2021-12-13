@@ -7,16 +7,24 @@ You can run them in your browser after following a few simple steps.
 
 1. Make sure Go is installed on your machine:
 
+    ```
     go version
+    ```
 
 2. Install the `present` tool:
 
-    go get -u golang.org/x/tools/present
+    ```
+    go get golang.org/x/tools/cmd/present
+    ```
 
 3. Clone this repository and `cd` to the clone:
 
+    ```
     git clone https://github.com/jub0bs/go-course-advanced && cd go-course-advanced
+    ```
 
 4. Run the present tool:
 
-   present
+    ```
+    present main.slide
+    ```
