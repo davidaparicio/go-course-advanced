@@ -712,7 +712,7 @@ Generics, also known as "type parameters", allow [[https://en.wikipedia.org/wiki
 Respondents to the annual Go survey have been [[https://blog.golang.org/survey2020-results][clamoring for them]] for years.
 
 A [[https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md][language proposal]] has been accepted, and generics are finally coming to Go
-(most likely [[https://www.youtube.com/watch?v=BNHwHLNLjLs&t=29m][by the end of 2021]]), without breaking compatibility with Go 1.0!
+(1.18, February 2022), without breaking compatibility with Go 1.0!
 
 You can experiment with Go generics in a [[https://go2goplay.golang.org/][special Playground]].
 
