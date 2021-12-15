@@ -2076,6 +2076,36 @@ In general, endeavor to use HTTP/2 between frontend and backend servers.
 
 
 
+* Path traversal / local-file inclusion
+
+Sanitize/validate all user-supplied input, especially if you build a file path out of it.
+
+Otherwise, attackers may be able to read and/or write arbitrary files on the server!
+
+A recent example is [[https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-43798][CVE-2021-43798]], a path-traversal vulnerability in Grafana (affecting v8.0.0-beta1 through v8.3.0) that allowed attackers to perform local-file inclusion.
+
+See https://twitter.com/TomNomNom/status/1468521389623808002 for an analysis of the flaw.
+
+
+
+* Exercise: path traversal leading to LFI
+
+1. Open `go-course-advanced/src/fli` in VS Code.
+
+2. After studying the code, start the server.
+
+3. Visit `http://localhost:8081/static/dinosaur.txt` in your browser.
+
+4. Try to access files outside the `static` folder by manipulating the path in your browser's address bar. What prevents you from doing so?
+
+5. Repeat step 4 using `curl` with its `--path-as-is` flag. Can you read `/etc/passwd`?
+
+6. Fix the security flaw by changing the server code.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
 * Mass assignment
 
 There is an [[https://www.youtube.com/watch?v=FkPqqakDeRY&t=33m][unfortunate tendency]] in the Go community to use the same struct types through all the layers (from presentation all the way to storage) of a Web application.
