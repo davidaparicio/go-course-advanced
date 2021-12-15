@@ -2090,7 +2090,7 @@ See https://twitter.com/TomNomNom/status/1468521389623808002 for an analysis of 
 
 * Exercise: path traversal leading to LFI
 
-1. Open `go-course-advanced/src/fli` in VS Code.
+1. Open `go-course-advanced/src/lfi` in VS Code.
 
 2. After studying the code, start the server.
 
