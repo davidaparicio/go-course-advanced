@@ -22,3 +22,18 @@ type Checker interface {
 type Client interface {
 	Do(req *http.Request) (*http.Response, error)
 }
+
+type ErrUnknownAvailability struct {
+	Username string
+	Platform string
+	Cause    error
+}
+
+func (err *ErrUnknownAvailability) Error() string {
+	const tmpl = "unknown availability of %q on %s: %v"
+	return fmt.Sprintf(tmpl, err.Username, err.Platform, err.Cause)
+}
+
+func (err *ErrUnknownAvailability) Unwrap() error {
+	return err.Cause
+}

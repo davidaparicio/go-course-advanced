@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -59,8 +60,10 @@ func main() {
 	for {
 		select {
 		case err := <-errc:
-			const tmpl = "namecheck: some error occurred: %s\n"
-			fmt.Fprintf(os.Stderr, tmpl, err)
+			var errUA *namecheck.ErrUnknownAvailability
+			if ok := errors.As(err, &errUA); ok {
+				fmt.Println(errUA.Username, errUA.Platform)
+			}
 			return
 		case res, ok := <-results:
 			if !ok {
