@@ -70,7 +70,7 @@ Using the `reflect` package is difficult, leads unreadable code, and often creat
 
 *unsafe*
 
-`unsafe` is excluded from the [[https://golang.org/doc/go1compat#expectations][Go 1 compatibility guarantee]]. Importing the `unsafe` package therefore makes your code likely to break with a future release.
+`unsafe` is excluded from the [[https://go.dev/doc/go1compat#expectations][Go 1 compatibility guarantee]]. Importing the `unsafe` package therefore makes your code likely to break with a future release.
 
 Resources:
 
@@ -179,7 +179,7 @@ Try to [[https://www.youtube.com/watch?v=PAAkCSZUG1c&t=6m25s][design your types 
 
 *Convenience*
 
-The zero-value-is-useful property is [[https://golang.org/doc/effective_go#allocation_new][transitive]]: if all the fields of a struct type have a useful zero value, then so does that struct type!
+The zero-value-is-useful property is [[https://go.dev/doc/effective_go#allocation_new][transitive]]: if all the fields of a struct type have a useful zero value, then so does that struct type!
 
   type SyncedBuffer struct {
       lock    sync.Mutex
@@ -329,7 +329,7 @@ No need for dependency-injection frameworks in Go! Interfaces are enough!
 
 Go takes a lightweight but powerful approach to documentation: the documentation of a package is simply written as comments in the package's source file(s).
 
-Document your packages and everything it exports. [[https://blog.golang.org/godoc][Follow the conventions]].
+Document your packages and everything it exports. [[https://go.dev/blog/godoc][Follow the conventions]].
 
 You can also write executable examples, which become part of your package's documentation and test suite.
 
@@ -466,7 +466,7 @@ See [[https://www.youtube.com/watch?v=yeetIgNeIkc][Mat Ryer - Idiomatic Go Trick
 - parsing error messages to access contextual information programmatically
 - calling `os.Exit` or `log.Fatal` deep within your program
 - panicking willy-nilly
-- [[https://play.golang.org/p/WmGrIUbUdmb][recovering from panics]] indiscriminately
+- [[https://go.dev/play/p/WmGrIUbUdmb][recovering from panics]] indiscriminately
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/science/gas-mask.svg 200 _
 
@@ -535,7 +535,7 @@ You can compare an error to a specific sentinel error value:
     // handle error
   }
 
-Since [[https://blog.golang.org/go1.13-errors][Go 1.13]], you can ask wether the error chain contains the error value of interest:
+Since [[https://go.dev/blog/go1.13-errors][Go 1.13]], you can ask wether the error chain contains the error value of interest:
 
   if errors.Is(err, io.EOF) {
     // handle error
@@ -709,12 +709,12 @@ _Domain-driven_design_(DDD)_is_the_concept_that_the_structure_and_language_of_so
 
 Generics, also known as "type parameters", allow [[https://en.wikipedia.org/wiki/Parametric_polymorphism][_parametric_polymorphism_]].
 
-Respondents to the annual Go survey have been [[https://blog.golang.org/survey2020-results][clamoring for them]] for years.
+Respondents to the annual Go survey have been [[https://go.dev/blog/survey2020-results][clamoring for them]] for years.
 
 A [[https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md][language proposal]] has been accepted, and generics are finally coming to Go
 (1.18, February 2022), without breaking compatibility with Go 1.0!
 
-You can experiment with Go generics in a [[https://go2goplay.golang.org/][special Playground]].
+You can already experiment with Go generics in the [[https://go.dev/play/?v=gotip][Go Playground]] after switching from _Go_release_ to _Go_dev_branch_ in the dropdown menu.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/party/birthday.svg 200 _
 
@@ -731,7 +731,7 @@ The advent of generics is promising:
 - more type safety (fewer use cases for the empty interface)
 - fewer reasons to resort to code generation
 
-See [[https://blog.golang.org/why-generics][_Why_Generics?_]] on the golang blog (the syntax is outdated, though).
+See [[https://go.dev/blog/why-generics][_Why_Generics?_]] on the Go blog (the syntax is outdated, though).
 
 Some people worry that generics are going to compromise Go's agenda of simplicity.
 Time will tell...
@@ -744,7 +744,7 @@ Time will tell...
 
 * Exercise: make a binary-tree type generic
 
-1. Open [[https://go2goplay.golang.org/p/ogVJA0hyXpm][https://go2goplay.golang.org/p/ogVJA0hyXpm]].
+1. Open [[https://go.dev/play/p/ogVJA0hyXpm?v=gotip][https://go.dev/play/p/ogVJA0hyXpm?v=gotip]].
 
 2. The `Tree` type represents a binary tree. Study its implementation.
 
@@ -752,7 +752,7 @@ Time will tell...
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
-: solution: https://go2goplay.golang.org/p/Pq3wA9WjdgO
+: solution: https://go.dev/play/p/Pq3wA9WjdgO?v=gotip
 
 
 
@@ -909,7 +909,7 @@ Instead, for the time being, use the dummy context `context.TODO()`.
 
 Revisit the code later, once you've figured out where to obtain a proper context from.
 
-.image https://blog.golang.org/gopher/plush.jpg 300 _
+.image https://go.dev/blog/gopher/plush.jpg 300 _
 
 
 
@@ -919,7 +919,7 @@ Pass contexts to functions; don't store contexts in struct fields.
 
 In rare cases, in order not to break an existing API, you may have to store a context in a struct, but that's the exception that confirms the rule.
 
-See [[https://blog.golang.org/context-and-structs][Contexts and structs]] on the Golang blog.
+See [[https://go.dev/blog/context-and-structs][Contexts and structs]] on the Golang blog.
 
 : unless you have to
 
@@ -1068,7 +1068,7 @@ Why does this program deadlock?
 
 * Exercise: debug this ping-pong game
 
-1. Open [[https://play.golang.org/p/n7XQ_TdOY4t][this Playground]]. It models a ping-pong game adapted from ([[https://talks.golang.org/2013/advconc.slide#6][a talk by Sameer Ajmani]]).
+1. Open [[https://go.dev/play/p/n7XQ_TdOY4t][this Playground]]. It models a ping-pong game adapted from ([[https://go.dev/talks/2013/advconc.slide#6][a talk by Sameer Ajmani]]).
 
 2. The game ends with a deadlock. Can you see why?
 
@@ -1082,13 +1082,13 @@ Why does this program deadlock?
 : one player terminates while the other is left holding the ball
 : one possibility: buffer size of 1, but no guarantee that the same player will play twice in a row
 : non-blocking send by adding a select statement
-: solution: https://play.golang.org/p/RVdBZVVbkj3
+: solution: https://go.dev/play/p/RVdBZVVbkj3
 
 
 
 * Avoid time.Tick
 
-`time.Tick` is a [[https://golang.org/pkg/time/#Tick][convenient function]] for perfoming some work at regular intervals:
+`time.Tick` is a [[https://pkg.go.dev/time/#Tick][convenient function]] for perfoming some work at regular intervals:
 
 .play -edit src/tick/main.go /^//START/,/^//END/
 
@@ -1326,7 +1326,7 @@ you can reduce tail latency by sending [[https://www.youtube.com/watch?v=f6kdp27
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 150 _
 
 : careful not to leak goroutines
-: one solution: https://play.golang.org/p/FoKJmaIK9Ze
+: one solution: https://go.dev/play/p/FoKJmaIK9Ze
 : could do something more clever: only send a secondary request if no response within 95% percentile of response time
 
 
@@ -1363,7 +1363,7 @@ See [[https://www.youtube.com/watch?v=LHe1Cb_Ud_M][Peter Bourgon - Way to do thi
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 150 _
 
-: solution: https://play.golang.org/p/Hdt-MWGxYUz
+: solution: https://go.dev/play/p/Hdt-MWGxYUz
 
 
 
@@ -1556,7 +1556,7 @@ However, [[http://mmcloughlin.com/posts/your-pprof-is-showing][for security reas
 
 3. Run the server.
 
-4. Study the [[https://golang.org/pkg/net/http/pprof/][`net/http/pprof` documentation]].
+4. Study the [[https://pkg.go.dev/net/http/pprof/][`net/http/pprof` documentation]].
 
 5. Use `go`tool`pprof` to inspect the profiling results of your live server.
 
@@ -1807,7 +1807,7 @@ The respective columns correspond to
 Go executables are statically linked: they embark all they need for the program to run.
 As a result, their size can perceived as greater than needed.
 
-You can reduce the size of a Go binary by [[https://golang.org/cmd/link/#hdr-Command_Line][omiting symbol tables and debug information]]:
+You can reduce the size of a Go binary by [[https://pkg.go.dev/cmd/link/#hdr-Command_Line][omiting symbol tables and debug information]]:
 
   go build -ldflags="-s -w" main.go
 
@@ -1889,7 +1889,7 @@ If users can indirectly spawn many goroutines via a malicious request, they may 
 
 In such cases, avoid using the fan-out pattern.
 
-.image https://blog.golang.org/store/gophers.jpg 200 _
+.image https://go.dev/blog/store/gophers.jpg 200 _
 
 
 
@@ -1917,14 +1917,14 @@ The core library provides two similar packages: `text/template` and `html/templa
 
 Both packages have "template" as default package name and have very similar APIs. However,
 
-- `html/template` [[https://golang.org/pkg/html/template/#hdr-Introduction][output-encodes content in a context-aware fashion]] (HTML, CSS, JS),
+- `html/template` [[https://pkg.go.dev/html/template/#hdr-Introduction][output-encodes content in a context-aware fashion]] (HTML, CSS, JS),
 - `text/template` output-encodes nothing.
 
 If you use HTML templates server-side, make sure you use `html/template` rather than `text/template`! Otherwise, you run the risk of XSS.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/science/gas-mask.svg 200 _
 
-: https://golang.org/pkg/html/template/#hdr-Introduction
+: https://pkg.go.dev/html/template/#hdr-Introduction
 : sadly, goimports text/template rather than html/template
 
 
@@ -1972,7 +1972,7 @@ See [[https://blog.cloudflare.com/exposing-go-on-the-internet][Filippo Valsorda 
 
 * Content sniffing in HTTP responses
 
-If you don't set the `Content-Type` header on your HTTP responses, the `net/http` package tries to guess the content type with [[https://golang.org/pkg/net/http/#DetectContentType][function `DetectContentType`]].
+If you don't set the `Content-Type` header on your HTTP responses, the `net/http` package tries to guess the content type with [[https://pkg.go.dev/net/http/#DetectContentType][function `DetectContentType`]].
 
 If the response body is controlled (at least to an extent) by the user, failing to specify the content type can result in issues like XSS.
 
