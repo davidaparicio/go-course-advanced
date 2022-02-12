@@ -48,7 +48,13 @@ A nameless value is [[https://www.youtube.com/watch?v=5DVV36uqQ4E&t=925s][confus
     go worker(results, job)
   }
 
-Document its meaning through a clarifying identifier:
+How could you improve things?
+
+
+
+* Declare your own clarifying variables and constants (cont'd)
+
+Document a value's meaning through a clarifying identifier:
 
   const nbWorkers = 16
   for i := 0; i < nbWorkers; i++ {
@@ -106,6 +112,10 @@ For designing a type that provides behaviors and needs to maintain _invariants_,
 - use a struct as the underlying type,
 - keep its fields unexported.
 
+
+
+* Encapsulate your types judiciously (cont'd)
+
 If instantiating your type requires some configuration, export _factory_function(s)_ for it.
 
 An example from the `regexp` package:
@@ -135,21 +145,42 @@ form a one-to-one correspondence.
 
 
 
-* Use separate types for data-access objects
+* Use separate types for data-transfer objects
 
 Not all types can or should be fully encapsulated. In particular, package such as `encoding/json` require you to export struct fields.
 
-However, you should resist the tendency to design types as mere "property bags".
+However, resist the temptation to design your business types as mere "property bags" and to use them through all the layers (from presentation to storage) of your application.
 
-Don't use the same struct type through all the layers (from presentation through to storage) of your application.
-
-If needed, declare dedicated DTO types for translating your encapsulated types to and from other formats (JSON, XML, etc.).
-
-Reassess those decisions only if you observe performance issues.
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/friends/stovepipe-hat-front.svg 300 _
 
 : using the same type throughout couples your database schema to the representations
 : encapsulation and security issues (mass assignment)
 : unlikely to be the bottleneck
+
+
+* Use separate types for data-transfer objects (cont'd)
+
+Instead, in addition to well-encapsulated business types,
+
+  type User struct {
+    id        int64
+    email     string
+    password  string
+    isAdmin    bool
+    created    time.Time
+    updated    time.Time
+    lastSeenAt time.Time
+  }
+
+declare DTO types for command and queries to and results from your API:
+
+  type UserSearchHitDTO struct {
+    Id            int64                `json:"id"`
+    Email         string               `json:"email"`
+    AvatarUrl     string               `json:"avatarUrl"`
+    IsAdmin       bool                 `json:"isAdmin"`
+    LastSeenAt    time.Time            `json:"lastSeenAt"`
+  }
 
 
 
@@ -229,33 +260,7 @@ When the zero value of your type isn't usable, document it!
 
 Instruct your clients to instatiate the type via a factory function.
 
-
-
-* Design secure-by-default enums
-
-The zero values of enum types should be secure / low-privilege.
-
-Don't do this:
-
-  type UserType int
-  const (
-    Admin UserType = iota
-    Employee
-    Collaborator
-    Anonymous
-  )
-
-Do this instead:
-
-  type UserType int
-  const (
-    Anonymous UserType = iota
-    Collaborator
-    Employee
-    Admin
-  )
-
-: User with UserType field would otherwise automatically be an admin!
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/witch-learning.svg 200 _
 
 
 
@@ -297,7 +302,7 @@ Maintaining state at the package level is a [[https://twitter.com/peterbourgon/s
 
 Values of struct types can be stateful; packages shouldn't.
 
-Stay away from `init` functions unless you have to use them.
+Stay away from `init` functions (if you can).
 
 Don't emulate the _registration_pattern_ (as implemented by the `database/sql` package).
 
@@ -331,7 +336,7 @@ Go takes a lightweight but powerful approach to documentation: the documentation
 
 Document your packages and everything it exports. [[https://go.dev/blog/godoc][Follow the conventions]].
 
-You can also write executable examples, which become part of your package's documentation and test suite.
+You can also write [[https://go.dev/blog/examples][executable examples]], which become part of your package's documentation and test suite.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/witch-learning.svg 200 _
 
@@ -365,11 +370,7 @@ If multiple test functions unduly duplicate the testing logic for different test
 you can gather those test cases under a single test function and run them as _subtests_:
 
   func TestIsValid(t *testing.T) {
-    cases := []struct{
-      label string
-      username string
-      want bool
-    }{
+    cases := []struct{label string; username string; want bool}{
       {label: "too long", username: "obviously_longer_than_15_chars", want: false},
       {label: "too short", username: "foo", want: false},
       {label: "valid", username: "jub0bs", want: true},
@@ -385,6 +386,8 @@ you can gather those test cases under a single test function and run them as _su
       t.Run(c.label, f)
     }
   }
+
+: the element type of slice cases is a an anonymous struct type
 
 
 
@@ -408,18 +411,39 @@ To stub or fake a single-method interface like the following,
     Do(req *http.Request) (*http.Response, error)
   }
 
-define a function type that implements the interface:
+declare a type based on a function whose signature matches the interface's method,
 
   type clientFunc func(*http.Request) (*http.Response, error)
+
+and make that type satisfy the interface simply by delegating to the function:
 
   func (f clientFunc) Do(req *http.Request) (*http.Response, error) {
     return f(req)
   }
 
-And define factory functions for that type:
 
-  func ClientWithError(err error) Client { /* ... */ }
-  func ClientWithStatusCode(sc int) Client { /* ... */ }
+
+* Test doubles: single-method-interface adapter
+
+For convenience, you can also declare factory functions for your test-double type:
+
+  func ClientWithStatusCodeAndBody(sc int, body string) namecheck.Client {
+    do := func(_ *http.Request) (*http.Response, error) {
+      res := http.Response{
+        StatusCode: sc,
+        Body:       io.NopCloser(strings.NewReader(body)),
+      }
+      return &res, nil
+    }
+    return clientFunc(do)
+  }
+
+  func ClientWithError(err error) namecheck.Client {
+    do := func(_ *http.Request) (*http.Response, error) {
+      return nil, err
+    }
+    return clientFunc(do)
+  }
 
 
 
@@ -427,11 +451,13 @@ And define factory functions for that type:
 
 1. Open `go-course-advanced/src/namecheck` in VS Code.
 
-2. Inspect the `stub` package.
+2. Study the `stub` package carefully.
 
-3. Write a few table-driven subtests for `twitter`'s IsAvailable method.
+3. In `github_test.go`, write a test that checks that, if the client responds with a 200, the `IsAvailable` method returns
 
-4. Run those tests.
+  false, nil
+
+4. Run that test.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
@@ -613,15 +639,17 @@ Internal packages are [[https://dave.cheney.net/2019/10/06/use-internal-packages
 
 1. Open `go-course-advanced/src/namecheck` in VS Code.
 
-2. Identify duplication between the `twitter` and `github` package.
+2. Notice some code duplication between the `twitter` and `github` package.
 
-3. Create a `namecheck/internal` package.
+3. Create a more flexible `IsLongEnough` function in a new `namecheck/internal` package.
 
-4. Move the code shared by packages `twitter` and `github` in that internal package.
+4. Make the `twitter` and `github` package use the `internal.IsLongEnough` function instead of their own `isLongEnough` function (which can now be removed).
 
-5. Try importing `namecheck/internal` in `cmd/cli/main.go` and running `go`build`.
+5. Which packages can import `namecheck/internal`? What about 3rd-party packages?
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+: step 3: add minLen as an extra param
 
 
 
@@ -1847,6 +1875,48 @@ See [[https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/
 
 
 
+* Design secure-by-default enums
+
+The zero values of "enum" types should be secure / low-privilege.
+
+Let's say you design types `User` and `Role` as follows:
+
+  type User struct {
+    Name string
+    Role Role
+  }
+
+  type Role int
+  const (
+    Admin Role = iota
+    Employee
+    Collaborator
+    Anonymous
+  )
+
+What's the problem?
+
+
+
+* Design secure-by-default enums (cont'd)
+
+If a `User` is instanciated without specifying a `Role`, the user is automatically admin!
+
+  user := User{Name: "Julien"}
+  fmt.Println(user.Role == Admin) // true
+
+Instead, design the `Role` enum as follows:
+
+  type Role int
+  const (
+    Anonymous Role = iota
+    Collaborator
+    Employee
+    Admin
+  )
+
+
+
 * Do use the go.sum file
 
 The modules system allows you to check the integrity (though not the trustworthiness!) of your dependencies.
@@ -2037,21 +2107,30 @@ Also known as _HTTP_desync_, request smuggling affects
 
 In some settings, a frontend server and a backend server may reuse TLS connections in order to stream HTTP requests and responses between them more efficiently.
 
+
+
+* Request smuggling (cont'd)
+
 _Request_smuggling_ becomes possible when the two servers don't agree on where a HTTP request ends and the next one starts.
+
+.image https://i0.wp.com/lab.wallarm.com/wp-content/uploads/2021/04/3-min.jpg 400 _
+
+
+
+* Request smuggling (cont'd)
+
+Attackers may exploit this confusion to _smuggle_ malicious requests to the backend server, in order to
+
+- elevate their privileges
+- leak sensitive data from legitimate users
+- mass-exploit otherwise harmless bugs
+- etc.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/science/gas-mask.svg 200 _
 
 
 
-* Request smuggling
-
-Attackers may exploit this confusion to _smuggle_ malicious requests to the backend server, in order to abuse elevate privileges, leak sensitive data from legitimate users, mass-exploit otherwise harmless bugs, etc.
-
-.image https://portswigger.net/web-security/images/http-request-smuggling.svg 400 _
-
-
-
-* Request smuggling
+* Request smuggling (cont'd)
 
 Resources:
 
@@ -2063,9 +2142,9 @@ Resources:
 
 
 
-* Request smuggling: mitigation
+* Request smuggling (cont'd)
 
-Update all server code!
+Mitigation: pdate all server code!
 
 - If possible, update to latest Go version.
 - If stuck at 1.13.x, update to 1.13.1.
@@ -2076,19 +2155,22 @@ In general, endeavor to use HTTP/2 between frontend and backend servers.
 
 
 
-* Path traversal / local-file inclusion
+* Path traversal
 
-Sanitize/validate all user-supplied input, especially if you build a file path out of it.
+A path-traversal vulnerability allows an attacker to access arbitrary files on the server, including outside the web root.
 
-Otherwise, attackers may be able to read and/or write arbitrary files on the server!
+You should validate and/or sanitize all user-supplied input, especially if you build a file path out of it.
 
 A recent example is [[https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-43798][CVE-2021-43798]], a path-traversal vulnerability in Grafana (affecting v8.0.0-beta1 through v8.3.0) that allowed attackers to perform local-file inclusion.
 
-See https://twitter.com/TomNomNom/status/1468521389623808002 for an analysis of the flaw.
+Resources:
+
+- [[https://j0vsec.com/post/cve-2021-43798/][CVE-2021-43798 - Path-traversal vulnerability in Grafana]]
+- [[https://twitter.com/TomNomNom/status/1468521389623808002][https://twitter.com/TomNomNom/status/1468521389623808002]]
 
 
 
-* Exercise: path traversal leading to LFI
+* Exercise: path traversal leading to local file inclusion
 
 1. Open `go-course-advanced/src/lfi` in VS Code.
 
