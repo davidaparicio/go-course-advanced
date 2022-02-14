@@ -1332,7 +1332,7 @@ If some data of interest is replicated across multiple data sources,
 you can reduce tail latency by sending [[https://www.youtube.com/watch?v=f6kdp27TYZs&t=31m15s][redundant requests]]:
 
 - Issue the same request to each data source concurrently.
-- Accept the first response and cancel the requests still in flight.
+- Accept whichever response comes back first and cancel the requests still in flight.
 - Give up if no response is received before a given deadline.
 
 .image https://miro.medium.com/max/4800/1*-bo7H329eM0O1eL_ASBVOA.jpeg 300 _
@@ -1356,6 +1356,31 @@ you can reduce tail latency by sending [[https://www.youtube.com/watch?v=f6kdp27
 : careful not to leak goroutines
 : one solution: https://go.dev/play/p/FoKJmaIK9Ze
 : could do something more clever: only send a secondary request if no response within 95% percentile of response time
+
+
+
+* Reducing tail latency with hedged requests
+
+Redundant requests consist in unconditionally sending requests to _all_ replicas. This pattern typically puts the system under prohibitive load. An improvement is to implement _hedged_requests_ instead:
+
+- Issue a request to the first replica.
+- If the response to the first request takes too long to come back, issue another request to the second replica; etc.
+- Accept whichever response comes back first and cancel the requests still in flight.
+- Give up if no response is received before a given deadline.
+
+.image https://miro.medium.com/max/4800/1*-bo7H329eM0O1eL_ASBVOA.jpeg 200 _
+
+
+
+* Hedged requests: an example
+
+1. Re-open `go-course-advanced/src/redundantreq` in VS Code.
+
+2. This time, instead of redundant requests, implement hedged requests.
+
+3. Compile the program and time its execution. Any improvement?
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
 
 
