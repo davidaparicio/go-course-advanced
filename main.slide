@@ -1384,42 +1384,6 @@ Redundant requests consist in unconditionally sending requests to _all_ replicas
 
 
 
-* Actors in Go
-
-Some problems lend themselves to the [[https://en.wikipedia.org/wiki/Actor_model][_actor_model_]].
-
-An actor is an encapsulated unit of computation that reacts to messages it receives by altering its state and behavior and perhaps sending messages to other actors.
-
-Go channels can be used to implement an actor's message queues.
-
-Actors give you linearized access to some state for free; no need for locking!
-
-See [[https://www.youtube.com/watch?v=LHe1Cb_Ud_M][Peter Bourgon - Way to do things]].
-
-.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/dandy/umbrella.svg 200 _
-
-
-
-* Exercise: state machine
-
-1. Open `go-course-advanced/src/statemachine` in VS Code.
-
-2. Inspect the code. The `StateMachine` type models a simple counter whose operations (increment and decrement) are made concurrency-safe through the use of a mutex.
-
-3. Add a field named `actions` of type `chan`func()` and initialize that field.
-
-4. Write a method `Run` that takes a `Context` as parameter and executes each action received on the `actions` channel.
-
-5. Modify the implementation of the `Increment` and `Decrement` methods accordingly.
-
-6. Remove the mutex field, which is now superfluous.
-
-.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 150 _
-
-: solution: https://go.dev/play/p/Hdt-MWGxYUz
-
-
-
 * Quiz: is there a data race?
 
 Is there a data race in the following program? Why or why not?
