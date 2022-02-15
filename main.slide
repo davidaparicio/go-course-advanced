@@ -2203,50 +2203,6 @@ However, some Go CORS middleware are a bit too helpful for the good of their use
 
 
 
-* Mass assignment
-
-There is an [[https://www.youtube.com/watch?v=FkPqqakDeRY&t=33m][unfortunate tendency]] in the Go community to use the same struct types through all the layers (from presentation all the way to storage) of a Web application.
-
-  type User struct {
-    Id string `json:"id"`
-    Name string `json:"name"`
-    Email string `json:"email"`
-    IsAdmin bool `json:"is_admin"`
-  }
-
-If you're not careful, this can introduce [[https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html][mass-assignment]] vulnerabilities in your application, which can lead to privilege escalation.
-
-See
-
-- [[http://homakov.blogspot.com/2012/03/how-to.html][Egor Homakov - Hacking rails/rails repo]]
-- [[https://arstechnica.com/information-technology/2012/03/hacker-commandeers-github-to-prove-vuln-in-ruby/][Ars Technica - Hacker commandeers GitHub to prove Rails vulnerability]].
-
-: attacker able to associate his public SSH key to victim's account
-: supply-chain attacks!
-
-
-
-* Mass assignment: mitigation
-
-You should
-
-- either whitelist attributes that must be decoded from JSON request bodies,
-- or blacklist attributes that _must_not_ be decoded.
-
-Some Go frameworks/toolkits allow you to blacklist JSON field via a field tag value:
-
-- [[https://gobuffalo.io/en/docs/bind#html-form-binding][Buffalo]]: `form:"-"`
-- [[http://www.gorillatoolkit.org/pkg/schema][Gorilla `schema` library]]: `schema:"-"`
-
-If your framework/toolkit cannot help you, you should
-
-- either manually discard the unwanted fields after decoding,
-- or use different types in the presentation layer and storage layer.
-
-: Gin: not sure?
-
-
-
 * JSON interoperability issues
 
 The JSON format is [[http://seriot.ch/parsing_json.php][under-specified]].
