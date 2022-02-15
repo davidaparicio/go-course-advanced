@@ -780,7 +780,7 @@ Time will tell...
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
-: solution: https://go.dev/play/p/Pq3wA9WjdgO?v=gotip
+(Solution: [[https://go.dev/play/p/Pq3wA9WjdgO?v=gotip][https://go.dev/play/p/Pq3wA9WjdgO?v=gotip]])
 
 
 
@@ -2172,6 +2172,32 @@ Resources:
 5. Repeat step 4 using `curl` with its `--path-as-is` flag. Can you read `/etc/passwd`?
 
 6. Fix the security flaw by changing the server code.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Beware CORS misconfigurations
+
+[[https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS][Cross-Origin Resource Policy]] is a protocol for selectively relaxing some of the [[https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy][Same-Origin Policy]]’s restrictions.
+
+Many developers notoriously do not have a firm grasp of CORS, and incorrect assumptions about that protocol are fodder for cross-origin abuse by more savvy attackers. This isn't specific to Go.
+
+However, some Go CORS middleware are a bit too helpful for the good of their users, who can easily configure CORS insecurely without realizing it.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/science/gas-mask.svg 200 _
+
+
+
+* Exercise: exploit a CORS misconfiguration
+
+1. Open `go-course-advanced/src/cors-misconfig` in VS Code. It contains a minimal Echo server configured for CORS.
+
+2. Read [[https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#credentialed_requests_and_wildcards][https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#credentialed_requests_and_wildcards]].
+
+3. Inspect the [[https://github.com/labstack/echo/blob/master/middleware/cors.go][source code of Echo's CORS middleware]]. Do you notice anything?
+
+4. As the victim, log in as the admin. As the attacker, mount a cross-site attack against the victim in order to exfiltrate the contents of the admin page.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
