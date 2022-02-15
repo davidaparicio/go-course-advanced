@@ -1,6 +1,7 @@
 package github_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -31,7 +32,7 @@ func TestIsAvailable200(t *testing.T) {
 		Client: stub.ClientWithStatusCode(http.StatusOK),
 	}
 	username := "whatever"
-	avail, _ := gh.IsAvailable(username)
+	avail, _ := gh.IsAvailable(context.Background(), username)
 	if avail {
 		t.Error("unexpected availability")
 	}
