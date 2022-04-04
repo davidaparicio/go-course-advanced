@@ -733,20 +733,83 @@ _Domain-driven_design_(DDD)_is_the_concept_that_the_structure_and_language_of_so
 * Generics
 
 
+
+* A non-generic binary tree
+
+A binary tree whose nodes each hold an `int` value can be designed as follows:
+
+  type IntTree struct {
+    Elem  int
+    Left  *IntTree
+    Right *IntTree
+  }
+
+The `Size` method returns the number of nodes in the tree:
+
+  func (t *IntTree) Size() int {
+    if t == nil {
+      return 0
+    }
+    return 1 + Size(t.Left) + Size(t.Right)
+  }
+
+See this [[https://go.dev/play/p/-x42l8-rqvK][playground]].
+
+What if you wanted nodes to hold values of type `string` instead?
+
+
+* Before generics: the code duplication / generation approach
+
+You could manually duplicate the type declaration in your code:
+
+  type StringTree struct {
+    Elem  string
+    Left  *StringTree
+    Right *StringTree
+  }
+
+Note that the implementation of the `Size` method would be identical!
+
+  func (t *StringTree) Size() int {
+    if t == nil {
+      return 0
+    }
+    return 1 + Size(t.Left) + Size(t.Right)
+  }
+
+Alternatively, you could generate different specializations of your binary tree (one for `int`, one for `string`, etc.) but that requires a pre-compilation step in your build...
+
+
+
+* Before generics: less type-safe, more cumbersome alternative
+
+You could design your tree to hold values of type `interface{}` instead:
+
+  type Tree struct {
+    Elem  interface{}
+    Left  *Tree
+    Right *Tree
+  }
+
+But the type is now _too_ flexible: different nodes of the same tree can hold values of different concrete types! See [[https://go.dev/play/p/unR9THFy5b-][this playground]].
+
+Also, retrieving a node value's concrete type requires the use of type assertions or reflection. Not great...
+
+
+
 * What are generics?
 
-Generics, also known as "type parameters", allow [[https://en.wikipedia.org/wiki/Parametric_polymorphism][_parametric_polymorphism_]].
+Generics, also known as "type parameters", allow [[https://en.wikipedia.org/wiki/Parametric_polymorphism][_parametric_polymorphism_]]. Go 1.18 adds support for generics in the language.
 
-Respondents to the annual Go survey have been [[https://go.dev/blog/survey2020-results][clamoring for them]] for years.
+Types and functions can now take _type_parameters_:
 
-A [[https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md][language proposal]] has been accepted, and generics are finally coming to Go
-(1.18, February 2022), without breaking compatibility with Go 1.0!
+  type Tree[E any] struct {
+    Elem  E
+    Left  *Tree[E]
+    Right *Tree[E]
+  }
 
-You can already experiment with Go generics in the [[https://go.dev/play/?v=gotip][Go Playground]] after switching from _Go_release_ to _Go_dev_branch_ in the dropdown menu.
-
-.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/party/birthday.svg 200 _
-
-: familiar with generics?
+See [[https://go.dev/play/p/H3MTBgdkc4x][this playground]].
 
 
 
@@ -755,32 +818,253 @@ You can already experiment with Go generics in the [[https://go.dev/play/?v=goti
 The advent of generics is promising:
 
 - more flexible and reusable functions and [[https://jub0bs.com/posts/2020-07-21-go-bimap][data structures]]
-- more efficient code at run time (at the cost of longer compilation)
-- more type safety (fewer use cases for the empty interface)
+- more efficient code at run time
+- more type safety
 - fewer reasons to resort to code generation
 
-See [[https://go.dev/blog/why-generics][_Why_Generics?_]] on the Go blog (the syntax is outdated, though).
+See [[https://go.dev/blog/why-generics][_Why_Generics?_]] on the Go blog; the syntax it uses is outdated, though.
 
 Some people worry that generics are going to compromise Go's agenda of simplicity.
 Time will tell...
 
+: slightly longer compilation
+: less empty interface
 : e.g. generic function for reversing a slice
 : What do you think?
 : see use cases in your code? do you use go generate?
 
 
 
-* Exercise: make a binary-tree type generic
+* Generic types and functions
 
-1. Open [[https://go.dev/play/p/ogVJA0hyXpm?v=gotip][https://go.dev/play/p/ogVJA0hyXpm?v=gotip]].
+A generic type takes a list of type arguments (in brackets) after its name:
 
-2. The `Tree` type represents a binary tree. Study its implementation.
+  type Tree[E any] struct {
+    Elem  E
+    Left  *Tree[E]
+    Right *Tree[E]
+  }
 
-3. Modify the code to make `Tree` and its methods generic. Any issues?
+A generic function takes a list of type arguments (in brackets) between its name and its list of normal parameters:
+
+  func Reverse[E any](s []E)
+
+At call sites, you must usually specify type arguments for the required type parameters (_instantiation_). In some cases, type inference by the compiler allows you to omit type arguments.
+
+: you can have generic interface types too
+
+
+
+* Exercise: write a generic Reverse function for slices
+
+1. Implement a generic function that reverses a slice in place:
+
+  func Reverse[E any](s []E)
+
+2. Use your function with slices of different types.
+
+3. What would you have had to do before Go 1.18?
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
-(Solution: [[https://go.dev/play/p/Pq3wA9WjdgO?v=gotip][https://go.dev/play/p/Pq3wA9WjdgO?v=gotip]])
+
+
+* Type constraints as regular interfaces
+
+The possible type arguments for a type parameter are restricted by a _type_constraint_, which is like a "metatype".
+
+Type constraints are expressed as interface types:
+
+  func WriteToAll[W io.Writer](ws []W, src []byte) (int, error)
+
+The language now provides a predeclared identifier named `any`, which simply is an _alias_ (with a shorter name) for the _empty_interface_:
+
+  type Tree[E any] struct {
+    Elem  E
+    Left  *Tree[E]
+    Right *Tree[E]
+  }
+
+Because the type constraint is `any`, our generic `Tree` type can be instantiated with an arbitrary type: `int`, `string`, `bool`, some struct type, etc.
+
+
+
+* Type constraints as type sets
+
+For operations provided by operators rather than by methods, you can use _type_sets_:
+
+  type Plusser interface {
+    int | uint | string
+  }
+
+The tilde prefix operator enables more flexibility:
+
+  type Plusser interface {
+    ~int | ~uint | ~string
+  }
+
+For instance, `~int` denotes any type whose [[https://go.dev/ref/spec#Underlying_types][_underlying_type_]] is `int`.
+
+The [[https://pkg.go.dev/golang.org/x/exp/constraints][golang.org/x/exp/constraints package]] provides useful type sets, such as `Ordered`, which allows any type that supports the ordering operators (`<`, `<=`, `>`, and `>=`).
+
+
+
+* Type constraints as type sets (cont'd) 
+
+Note: type sets can be used only as type constraints, not as regular types:
+
+  type Plusser interface {
+    int | uint | string
+  }
+
+  var p Plusser // compilation error
+
+This limitation may be lifted in a future release of Go.
+
+
+
+* Exercise: implement a Sum operation on the Tree type
+
+1. Open [[https://go.dev/play/p/H3MTBgdkc4x][this playground]].
+
+2. Add support for an operation named `Sum` on the `Tree` type. `Sum` should return the sum of the values of all the nodes in the tree.
+
+3. Can you declare `Sum` as a method on `*Tree`?
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Limitations on generic methods
+
+A method cannot tighten the constraints on its receiver's type parameters.
+
+For instance, given the following type declarations,
+
+  type Tree[E any] struct {
+    Elem  E
+    Left  *Tree[E]
+    Right *Tree[E]
+  }
+
+  type Plusser interface {
+    int | uint | string
+  }
+
+the following isn't allowed:
+
+  func (t *Tree[E Plusser]) Sum() E // compilation error
+
+However, you can declare `Sum` as a _function_ rather than as a _method_:
+
+  func Sum[P Plusser](t *Tree[P]) P
+
+
+
+* Limitations on generic methods (cont'd)
+
+Also, methods cannot introduce additional type parameters.
+
+For instance, given the following type declaration,
+
+  type Slice[T] interface {
+    ~[]T
+  }
+
+the following function isn't valid syntax:
+
+  func (Slice[T]) Map[U any](func(T) U) []U
+
+Again, you'd have to declare `Map` as a function rather than as a method:
+
+  func Map[T, U any](s []T, f func(T) U) []U
+
+
+
+* The comparable constraint
+
+The language now provides a type constraint named `comparable`, which is satisfied by all concrete types that support equality operators `==` and `!=`.
+
+.play -edit src/comparable.go /^//START/,/^//END/
+
+However, `comparable` can only be used as a type constraint, not as a type!
+
+
+
+* Two useful packages for reducing boilerplate
+
+The [[https://pkg.go.dev/golang.org/x/exp/slices][golang.org/x/exp/slices package]] provides various functions useful with slices of any type, such as one for sorting a slice:
+
+  func Sort[E constraints.Ordered](x []E)
+
+The [[https://pkg.go.dev/golang.org/x/exp/maps][golang.org/x/exp/maps package]] provides various functions useful with maps of any type, such as one that returns a slice containing the keys of a given map:
+
+  func Keys[M ~map[K]V, K comparable, V any](m M) []K
+
+Along with the golang.org/x/exp/constraints package, those two packages will likely be rolled into the core library in v1.19.
+
+
+
+* When comparable doesn't mean comparable
+
+All interface types are comparable. For instance, it's legal to do this:
+
+.play -edit src/interfaces_are_comparable.go /^//START/,/^//END/
+
+However, many interface types, including common ones like `any` and `io.Writer`,
+do _not_ satisfy the new `comparable` interface!
+
+See [[https://github.com/golang/go/issues/51338][proposal: spec: permit values to have type "comparable"]].
+
+This state of affairs gives rise to surprising and disheartening limitations...
+
+
+
+* When comparable doesn't mean comparable: an example
+
+[[https://pkg.go.dev/golang.org/x/exp/maps#Values][Function `maps.Values`]] expects a map whose key type satisfies `comparable`:
+
+  func Values[M ~map[K]V, K comparable, V any](m M) []V
+
+However, because `io.Writer` interface does not implement `comparable`, passing a map whose key type is `io.Writer` to `maps.Values` is illegal:
+
+  m := map[io.Writer]int{os.Stdout: 1, os.Stderr: 2}
+  fmt.Println(maps.Values(m)) // compilation error
+
+See [[https://go.dev/play/p/d2PwT6lXLwS][this playground]].
+
+
+
+* Recursive type bound
+
+How would you express the constraint "any type `T` that has a `Less(T)` bool method"?
+
+You can achieve that in Go 1.18+ using a trick similar to Java's _recursive_type_bound_.
+
+See [[https://go.dev/play/p/9AocjmraWHC][this playground]].
+
+See also [[https://stackoverflow.com/a/68868092/2541573][this Stack Overflow answer]].
+ 
+
+
+* A word to the wise
+
+Just because Go has generics doesn't mean that every type and function should be generic.
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/sage.svg 200 _
+
+: https://stackoverflow.com/questions/71628061/go-generics-where-would-i-use-any-instead-of-interface#comment126591841_71628061
+: Same problem with concurrency: don't use goroutines when you don't need them.
+
+
+
+* Resources about generics
+
+- [[https://go.dev/doc/tutorial/generics][Tutorial: Getting started with generics]]
+- [[https://go.dev/ref/spec#Type_parameter_declarations][Type parameter declarations (language spec)]]
+- [[https://jub0bs.com/posts/2020-07-21-go-bimap/][A glimpse at parametric polymorphism in Go: designing a generic bidirectional map]]
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/witch-learning.svg 200 _
 
 
 
@@ -1110,7 +1394,7 @@ Why does this program deadlock?
 : one player terminates while the other is left holding the ball
 : one possibility: buffer size of 1, but no guarantee that the same player will play twice in a row
 : non-blocking send by adding a select statement
-: solution: https://go.dev/play/p/RVdBZVVbkj3
+: solution: https://go.dev/play/p/mollK937Rzo
 
 
 
@@ -1328,14 +1612,19 @@ Backpressure / load shedding may be more judicious than blocking.
 
 * Reducing tail latency with redundant requests
 
-If some data of interest is replicated across multiple data sources,
+If some data of interest is replicated across multiple databases,
 you can reduce tail latency by sending [[https://www.youtube.com/watch?v=f6kdp27TYZs&t=31m15s][redundant requests]]:
 
-- Issue the same request to each data source concurrently.
+- Issue the same request to each databases concurrently.
 - Accept whichever response comes back first and cancel the requests still in flight.
-- Give up if no response is received before a given deadline.
 
-.image https://miro.medium.com/max/4800/1*-bo7H329eM0O1eL_ASBVOA.jpeg 300 _
+Watch Rob Pike explain this pattern in [[https://www.youtube.com/watch?v=oV9rvDllKEg&t=27m50s][this talk]].
+
+"Drop pattern" is another name for the general principle of carrying out redundant tasks and selecting the result of whichever finishes first.
+
+.image https://miro.medium.com/max/4800/1*-bo7H329eM0O1eL_ASBVOA.jpeg 200 _
+
+: Bill Kennedy uses the term "drop pattern" in his O'Reilly video course
 
 
 
@@ -1345,7 +1634,7 @@ you can reduce tail latency by sending [[https://www.youtube.com/watch?v=f6kdp27
 
 2. Compile the program and time its execution.
 
-3. In `main`, create a few more data centers ("Paris", "Roubaix", etc.) where the data of interest is replicated. Apply the pattern discussed on the previous slide.
+3. In `main`, create a few more data centers ("Paris", "Roubaix", etc.) where the data of interest is replicated. Apply the pattern discussed on the previous slide. In addition, give up if no response is received before a given deadline.
 
 5. Compile the program and time its execution. Any improvement?
 
@@ -1366,7 +1655,8 @@ Redundant requests consist in unconditionally sending requests to _all_ replicas
 - Issue a request to the first replica.
 - If the response to the first request takes too long to come back, issue another request to the second replica; etc.
 - Accept whichever response comes back first and cancel the requests still in flight.
-- Give up if no response is received before a given deadline.
+
+More about this and similar techniques for taming tail latency in [[https://www.youtube.com/watch?v=1-3Ahy7Fxsc][this talk by Jeff Dean]].
 
 .image https://miro.medium.com/max/4800/1*-bo7H329eM0O1eL_ASBVOA.jpeg 200 _
 
@@ -1376,7 +1666,7 @@ Redundant requests consist in unconditionally sending requests to _all_ replicas
 
 1. Re-open `go-course-advanced/src/redundantreq` in VS Code.
 
-2. This time, instead of redundant requests, implement hedged requests.
+2. This time, instead of redundant requests, implement hedged requests. In addition, give up if no response is received before a given deadline.
 
 3. Compile the program and time its execution. Any improvement?
 
@@ -1526,6 +1816,8 @@ You can also run `pprof` as a server, for visualization in your browser:
 
 .image https://matoski.com/article/golang-profiling-flamegraphs/goroutines-flamegraph.png 200 _
 
+If you're not familiar with flame graphs and don't know how to interpret them, read [[https://www.webperf.tips/tip/understanding-flamegraphs/][this post]].
+
 
 
 * Exercise: profile and improve tomnomnom/anew
@@ -1545,6 +1837,7 @@ You can also run `pprof` as a server, for visualization in your browser:
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
 : use https://github.com/danielmiessler/SecLists/blob/master/Passwords/BiblePass/BiblePass_part01.txt
+: use os.Create rather than os.Open
 : why stop using pprof
 
 
@@ -1694,12 +1987,13 @@ To respect the alignment rules, the compiler may have to add some _padding_.
 
 As a result, the order of a struct's fields affects the struct's size in memory!
 
-You can visualize a struct's memory layout with the structlayout utility:
+You can visualize that layout with [[https://twitter.com/dominikhonnef][Dominik Honnef]]'s [[https://github.com/dominikh/go-tools/tree/master/cmd/structlayout][`structlayout` utilities]]:
 
-  go get honnef.co/go/tools/cmd/structlayout
+  go install honnef.co/go/tools/cmd/structlayout
+  go install honnef.co/go/tools/cmd/structlayout-pretty
+  go install honnef.co/go/tools/cmd/structlayout-optimize
 
-To minimize padding, order the fields of your struct in decreasing size order:
-largest field first, smallest field last.
+One sure way of minimizing padding consists in ordering the fields of your struct in decreasing size order: largest field first, smallest field last.
 
 .image https://miro.medium.com/max/4800/1*OxWM0qyTBnb6WfSEw-T9sg.jpeg 200 _
 
@@ -1709,19 +2003,19 @@ largest field first, smallest field last.
 
 1. Open `go-course-advanced/src/memorylayout` in VS Code.
 
-2. If you disregard padding, how many bytes does a value of `User` take in memory?
+2. If you disregard padding, how many bytes does a value of `User` take in memory? What if you include padding?
 
-3. What if you include padding?
+3. Check your intuition first with `unsafe.Sizeof`, then by running
 
-4. Check the actual size with `unsafe.Sizeof`.
+  structlayout -json ./main.go User | structlayout-pretty
 
-5. Create an alternative type named `User2` whose memory layout minimizes padding.
+4. Create an alternative type named `User2` whose memory layout minimizes padding.
 
-6. Check the memory layouts of `User` and `User2` with `structlayout`.
+5. Check the memory layout of `User2`. Note the improvement over that of `User`.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
-: structlayout mymodulepath User
+: structlayout -json ./main.go User | structlayout-optimize -json | structlayout-pretty
 
 
 
@@ -1990,15 +2284,17 @@ If you use HTML templates server-side, make sure you use `html/template` rather 
 
 * Don't expose pprof to the world
 
-As discussed before, exposing `pprof` data to the world reveals possibly information useful to attackers:
+Exposing `pprof` data to the world reveals possibly information useful to attackers, including the Go version, dependencies, [[https://owasp.org/www-community/attacks/Full_Path_Disclosure][the web root]], behavior under load, etc.
 
-- Go version
-- dependencies used by the server
-- [[https://owasp.org/www-community/attacks/Full_Path_Disclosure][full-path disclosure]]
-- behavior under load
-- etc.
+See, for example, the following bug-bounty reports:
+
+- [[https://hackerone.com/reports/783807][Multiple Information Disclosure with Go PPROF on api-ne.mackeeper.com]]
+- [[https://hackerone.com/reports/1102283][CVE-2019-11248 on alertmanager.ev-cloud-platform.engelvoelkers.com]]
+- [[https://hackerone.com/reports/1247910][Exposed Golang debugger on tier3.riot.mail.ru:9090, 9080]]
+
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/science/gas-mask.svg 200 _
+
 
 
 * Exercise: find exposed pprof endpoints in the wild
@@ -2013,8 +2309,24 @@ As discussed before, exposing `pprof` data to the world reveals possibly informa
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
-: don't use the default ServeMux
 
+
+
+* Don't expose pprof to the world (cont'd)
+
+The problem is that a blank import of the `net/http/pprof` package registers the pprof handlers on the [[https://pkg.go.dev/net/http#DefaultServeMux][`http.DefaultServeMux`]], which robs you of the opportunity to put them behind some authentication/authorization.
+
+Instead, you should use a custom [[https://pkg.go.dev/net/http#ServeMux][`http.ServeMux`]].
+You can either manually register the pprof handlers on the same custom mux you use for your other normal handlers.
+TODO
+https://blog.cloudflare.com/exposing-go-on-the-internet/#servemux
+This approach allows you to
+
+- either wrap the mux in some auth middleware,
+- or [[https://mmcloughlin.com/posts/your-pprof-is-showing][bind it to a separate port]] and prevent access to it at the reverse-proxy level.
+
+: https://twitter.com/goinggodotnet/status/1405288617128325120
+: don't use the default ServeMux
 
 
 * Don't rely on the default HTTP server and client
