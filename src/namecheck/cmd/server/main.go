@@ -1,15 +1,12 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jub0bs/namecheck"
@@ -99,11 +96,9 @@ func handleCheck(w http.ResponseWriter, r *http.Request) {
 	}
 	results := make(chan Result)
 	var wg sync.WaitGroup
-	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
-	defer cancel()
 	wg.Add(len(checkers))
 	for _, checker := range checkers {
-		go check(ctx, checker, username, &wg, results)
+		go check(checker, username, &wg, results)
 	}
 	go func() {
 		wg.Wait()
@@ -139,7 +134,6 @@ func handleCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func check(
-	ctx context.Context,
 	checker namecheck.Checker,
 	username string,
 	wg *sync.WaitGroup,
@@ -155,12 +149,9 @@ func check(
 		results <- res
 		return
 	}
-	avail, err := checker.IsAvailable(ctx, username)
+	avail, err := checker.IsAvailable(username)
 	res.Available = avail
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-			log.Println("canceled!")
-		}
 		res.Error = err
 	}
 	results <- res

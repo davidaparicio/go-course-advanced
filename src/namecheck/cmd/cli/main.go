@@ -1,13 +1,12 @@
 package main
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/jub0bs/namecheck"
 	"github.com/jub0bs/namecheck/github"
@@ -49,11 +48,9 @@ func main() {
 	results := make(chan Result, len(checkers))
 	errc := make(chan error, len(checkers))
 	var wg sync.WaitGroup
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
 	wg.Add(len(checkers))
 	for _, checker := range checkers {
-		go check(ctx, checker, username, &wg, results, errc)
+		go check(checker, username, &wg, results, errc)
 	}
 	go func() {
 		wg.Wait()
@@ -63,7 +60,10 @@ func main() {
 	for {
 		select {
 		case err := <-errc:
-			fmt.Println(err)
+			var errUA *namecheck.ErrUnknownAvailability
+			if ok := errors.As(err, &errUA); ok {
+				fmt.Println(errUA.Username, errUA.Platform)
+			}
 			return
 		case res, ok := <-results:
 			if !ok {
@@ -75,7 +75,6 @@ func main() {
 }
 
 func check(
-	ctx context.Context,
 	checker namecheck.Checker,
 	username string,
 	wg *sync.WaitGroup,
@@ -92,7 +91,7 @@ func check(
 		results <- res
 		return
 	}
-	avail, err := checker.IsAvailable(ctx, username)
+	avail, err := checker.IsAvailable(username)
 	if err != nil {
 		errc <- err
 		return

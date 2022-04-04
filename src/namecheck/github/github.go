@@ -1,7 +1,6 @@
 package github
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -40,9 +39,9 @@ func (*GitHub) IsValid(username string) bool {
 		containsNoIllegalSuffix(username)
 }
 
-func (gh *GitHub) IsAvailable(ctx context.Context, username string) (bool, error) {
+func (gh *GitHub) IsAvailable(username string) (bool, error) {
 	endpoint := fmt.Sprintf("https://github.com/%s", url.PathEscape(username))
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		err := namecheck.ErrUnknownAvailability{
 			Username: username,
