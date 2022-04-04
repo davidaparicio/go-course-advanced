@@ -1,4 +1,3 @@
-// twitter allows users to check the validity and availabity...
 package twitter
 
 import (
@@ -12,10 +11,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/jub0bs/namecheck"
-	"github.com/jub0bs/namecheck/internal"
 )
 
-// Twitter is an abstraction ...
 type Twitter struct {
 	Client namecheck.Client
 }
@@ -28,20 +25,17 @@ const (
 
 var legalPattern = regexp.MustCompile("^[0-9A-Z_a-z]*$")
 
-// String returns a string repr of Twitter
 func (*Twitter) String() string {
 	return "Twitter"
 }
 
-// IsValid check whether a username is valid
 func (*Twitter) IsValid(username string) bool {
-	return internal.IsLongEnough(username, minLen) &&
+	return isLongEnough(username) &&
 		isShortEnough(username) &&
 		containsNoIllegalPattern(username) &&
 		containsOnlyLegalChars(username)
 }
 
-// IsAvailable checks whethr username is available on Twitter
 func (tw *Twitter) IsAvailable(username string) (bool, error) {
 	const tmpl = "https://europe-west6-namechecker-api.cloudfunctions.net/userlookup?username=%s&simulateLatency=1"
 	endpoint := fmt.Sprintf(tmpl, url.QueryEscape(username))
@@ -66,6 +60,10 @@ func (tw *Twitter) IsAvailable(username string) (bool, error) {
 	}
 	// the absence of a data field in the response body indicates the username's availability
 	return dto.Data == nil, nil
+}
+
+func isLongEnough(username string) bool {
+	return utf8.RuneCountInString(username) >= minLen
 }
 
 func isShortEnough(username string) bool {

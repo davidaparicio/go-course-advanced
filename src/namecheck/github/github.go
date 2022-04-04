@@ -9,7 +9,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/jub0bs/namecheck"
-	"github.com/jub0bs/namecheck/internal"
 )
 
 type GitHub struct {
@@ -31,7 +30,7 @@ func (*GitHub) String() string {
 }
 
 func (*GitHub) IsValid(username string) bool {
-	return internal.IsLongEnough(username, minLen) &&
+	return isLongEnough(username) &&
 		isShortEnough(username) &&
 		containsNoIllegalPattern(username) &&
 		containsOnlyLegalChars(username) &&
@@ -43,24 +42,18 @@ func (gh *GitHub) IsAvailable(username string) (bool, error) {
 	endpoint := fmt.Sprintf("https://github.com/%s", url.PathEscape(username))
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
-		err := namecheck.ErrUnknownAvailability{
-			Username: username,
-			Platform: gh.String(),
-			Cause:    err,
-		}
-		return false, &err
+		return false, err
 	}
 	resp, err := gh.Client.Do(req)
 	if err != nil {
-		err := namecheck.ErrUnknownAvailability{
-			Username: username,
-			Platform: gh.String(),
-			Cause:    err,
-		}
-		return false, &err
+		return false, err
 	}
 	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusNotFound, nil
+}
+
+func isLongEnough(username string) bool {
+	return utf8.RuneCountInString(username) >= minLen
 }
 
 func isShortEnough(username string) bool {

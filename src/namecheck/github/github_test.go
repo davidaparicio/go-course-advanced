@@ -1,12 +1,10 @@
 package github_test
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/jub0bs/namecheck"
 	"github.com/jub0bs/namecheck/github"
-	"github.com/jub0bs/namecheck/stub"
 )
 
 var _ namecheck.Checker = (*github.GitHub)(nil)
@@ -23,16 +21,5 @@ func TestUsernameTooLong(t *testing.T) {
 			got,
 			want,
 		)
-	}
-}
-
-func TestIsAvailable200(t *testing.T) {
-	gh := github.GitHub{
-		Client: stub.ClientWithStatusCode(http.StatusOK),
-	}
-	username := "whatever"
-	avail, _ := gh.IsAvailable(username)
-	if avail {
-		t.Error("unexpected availability")
 	}
 }
