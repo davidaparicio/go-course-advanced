@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jub0bs/namecheck"
+	"github.com/jub0bs/namecheck/internal"
 )
 
 type Twitter struct {
@@ -25,17 +26,20 @@ const (
 
 var legalPattern = regexp.MustCompile("^[0-9A-Z_a-z]*$")
 
+// String returns a textual representation of the Twitter type.
 func (*Twitter) String() string {
 	return "Twitter"
 }
 
+// IsAvailable checks the validity of a username on Twitter.
 func (*Twitter) IsValid(username string) bool {
-	return isLongEnough(username) &&
+	return internal.IsLongEnough(username, minLen) &&
 		isShortEnough(username) &&
 		containsNoIllegalPattern(username) &&
 		containsOnlyLegalChars(username)
 }
 
+// IsAvailable checks the availability of a username on Twitter.
 func (tw *Twitter) IsAvailable(username string) (bool, error) {
 	const tmpl = "https://europe-west6-namechecker-api.cloudfunctions.net/userlookup?username=%s&simulateLatency=1"
 	endpoint := fmt.Sprintf(tmpl, url.QueryEscape(username))
@@ -60,10 +64,6 @@ func (tw *Twitter) IsAvailable(username string) (bool, error) {
 	}
 	// the absence of a data field in the response body indicates the username's availability
 	return dto.Data == nil, nil
-}
-
-func isLongEnough(username string) bool {
-	return utf8.RuneCountInString(username) >= minLen
 }
 
 func isShortEnough(username string) bool {

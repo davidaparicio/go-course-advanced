@@ -2,12 +2,23 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 
 	"mymodulepath/bimap"
 )
 
+var re regexp.Regexp
+
+func init() {
+	//sdfgsdfg
+	///sdfg
+	//sdfg
+	re = //...
+}
+
 func main() {
-	frToEn := bimap.New()
+	init() 
+	var frToEn bimap.Bimap
 	frToEn.Store("un", "one")
 	frToEn.Store("deux", "two")
 	fmt.Println(frToEn)

@@ -29,7 +29,7 @@ func ClientWithStatusCodeAndBody(sc int, body string) namecheck.Client {
 		}
 		return &res, nil
 	}
-	return clientFunc(do)
+	return do
 }
 
 func ClientWithStatusCode(sc int) namecheck.Client {
