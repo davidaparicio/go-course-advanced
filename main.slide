@@ -539,13 +539,11 @@ To provide more information, declare your own type that satisfies `error` and `w
 
 1. Open `go-course-advanced/src/namecheck` in VS Code.
 
-2. Export a struct type from `namecheck` that represents a failure to check the availability of a username.
+2. Export a struct type from package `namecheck` that represents a failure to check the availability of a username; it should provide some context about the failure (username, platform, underlying cause).
 
 3. Make it satisfy the `error` interface.
 
-4. Make it satisfy the `wrapper` interface.
-
-5. Rather than bubbling up the low-level error produces by the `http` package in the `IsAvailable` function, return a pointer to a value of your custom error type.
+4. Rather than bubbling up the low-level error produces by the `http` package in the `IsAvailable` function, return a pointer to a value of your custom error type.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
@@ -580,11 +578,13 @@ If you're only interested in the next value up the error chain, do this:
 
 1. Open `go-course-advanced/src/namecheck` in VS Code.
 
-2. In `cmd/cli/main.go`, access the cause of the error returned by `IsAvailable` and print it.
+2. Make `UnknownAvailabilityError` satisfy the `wrapper` interface.
 
-3. To trigger an artificial error, scramble the host in the implementation of `GitHub`'s `IsAvailable` method.
+3. In `main`, access the cause of the error received on the channel and print it.
 
-4. Compile and run the program.
+4. To trigger an artificial error, scramble the host in the implementation of `GitHub`'s `IsAvailable` method.
+
+5. Compile and run the program.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
@@ -799,7 +799,9 @@ Also, retrieving a node value's concrete type requires the use of type assertion
 
 * What are generics?
 
-Generics, also known as "type parameters", allow [[https://en.wikipedia.org/wiki/Parametric_polymorphism][_parametric_polymorphism_]]. Go 1.18 adds support for generics in the language.
+Generics, also known as "type parameters", allow [[https://en.wikipedia.org/wiki/Parametric_polymorphism][_parametric_polymorphism_]].
+
+Go 1.18 adds support for generics in the language.
 
 Types and functions can now take _type_parameters_:
 
@@ -885,7 +887,7 @@ The language now provides a predeclared identifier named `any`, which simply is 
     Right *Tree[E]
   }
 
-Because the type constraint is `any`, our generic `Tree` type can be instantiated with an arbitrary type: `int`, `string`, `bool`, some struct type, etc.
+Because the type constraint is `any`, our generic `Tree` type can be instantiated with an arbitrary type argument: `int`, `string`, `bool`, some struct type, etc.
 
 
 
@@ -909,7 +911,7 @@ The [[https://pkg.go.dev/golang.org/x/exp/constraints][golang.org/x/exp/constrai
 
 
 
-* Type constraints as type sets (cont'd) 
+* Type constraints as type sets (cont'd)
 
 Note: type sets can be used only as type constraints, not as regular types:
 
@@ -1044,7 +1046,7 @@ You can achieve that in Go 1.18+ using a trick similar to Java's _recursive_type
 See [[https://go.dev/play/p/9AocjmraWHC][this playground]].
 
 See also [[https://stackoverflow.com/a/68868092/2541573][this Stack Overflow answer]].
- 
+
 
 
 * A word to the wise
@@ -1482,7 +1484,7 @@ Send each result to a channel; a single goroutine receives results from that cha
 
 4. For each URL, print it to stdout as well as the size (in bytes) of the response's body; you can use `io.Copy` and `io.Discard` for that.
 
-5. Try your programme on [[https://raw.githubusercontent.com/jpf/domain-profiler/master/list/alexa-top-100][the top 100 Alexa domains]].
+5. Try your programme on [[https://gist.githubusercontent.com/jub0bs/5e23ef5c79bfb9a31defd9319dea71c4/raw/a45f9f56669a11d7f36ca95223fb46be2627f154/alexa25_times4.txt][the top 100 Alexa domains]].
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
@@ -2569,3 +2571,85 @@ Review which JSON-parsing libraries are used in your microservices architecture.
 If you use different libraries, make sure they don't suffer from interoperability issues.
 
 If possible, stick to a single JSON-parsing library throughout your system.
+
+
+
+* Fuzzing
+
+
+* What is fuzzing?
+
+[[https://en.wikipedia.org/wiki/Fuzzing][Fuzzing]] (a.k.a. fuzz testing) consists in throwing random inputs at a function to reveal security issues in its implementation.
+
+Fuzzing is a type of [[https://en.wikipedia.org/wiki/Property_testing][property-based testing]] with a strong focus on security rather than correctness.
+
+[[https://go.dev/blog/go1.18#fuzzing][Since Go 1.18]], fuzzing has [[https://pkg.go.dev/testing#hdr-Fuzzing][first-class support]] in the Go toolchain.
+
+: There were a number of third-party tools to do fuzz testing in Go.
+: crash, or allow inputs it shouldn't
+
+
+
+* Fuzz functions
+
+In addition to tests and microbenchmarks, the `testing` package now allows you to write fuzzing tests.
+
+Fuzz functions
+
+- are normal Go functions written in a "_test" suffixed source file;
+- are usually written in the same package as the production code;
+- must start with "Fuzz" followed by an uppercase letter;
+- must take a single parameter of type `*testing.F` and return no results.
+
+
+
+* Structure of a fuzz function
+
+  func FuzzReverse(f *testing.F) {
+    // arrange: populate the seed corpus
+    testcases := []string{"Hello, world", " ", "!12345"}
+    for _, tc := range testcases {
+      f.Add(tc)
+    }
+    f.Fuzz(func(t *testing.T, orig string) {
+      // act: exercise the function
+      rev := Reverse(orig)
+      doubleRev := Reverse(rev)
+      // assert: verify that one or more properties hold
+      if orig != doubleRev {
+        t.Errorf("Before: %q, after: %q", orig, doubleRev)
+      }
+      if utf8.ValidString(orig) && !utf8.ValidString(rev) {
+        t.Errorf("Reverse produced invalid UTF-8 string %q", rev)
+      }
+    })
+  }
+
+: corpus: set of values used to derive random ones
+
+
+
+* Running fuzz tests
+
+To run the fuzz tests only on the seed corpus (without actual fuzzing), run
+
+  go test
+
+To start fuzzing, run
+
+  go test -fuzz=Fuzz
+
+If any input is found to falsify the properties, it gets written to
+
+  testdata/fuzz/NAME_OF_FUZZ_FUNCTION/SOME_HASH_VALUE
+
+and becomes part of the corpus.
+
+
+
+* What to fuzz?
+
+Good candidates include functions that parse text and have security requirements and/or are not supposed to panic.
+
+Any example from the core library?
+
