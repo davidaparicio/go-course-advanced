@@ -17,12 +17,20 @@ func init() {
 }
 
 func main() {
-	dc := "Strasbourg"
-	results := make(chan Result)
+	dcs := []string{"Strasbourg", "Roubaix", "Paris"}
+	results := make(chan Result, 1)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-	go fetchFrom(ctx, results, dc)
-	fmt.Println(<-results)
+	for _, dc := range dcs {
+		go fetchFrom(ctx, results, dc)
+		select {
+		case r := <-results:
+			cancel()
+			fmt.Println(r)
+			return
+		case <-time.After(250 * time.Millisecond):
+		}
+	}
 }
 
 func fetchFrom(ctx context.Context, results chan<- Result, dc string) {

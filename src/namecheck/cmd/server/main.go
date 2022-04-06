@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"sync"
 	"sync/atomic"
+
+	_ "net/http/pprof"
 
 	"github.com/gorilla/mux"
 	"github.com/jub0bs/namecheck"
@@ -85,7 +88,7 @@ func handleCheck(w http.ResponseWriter, r *http.Request) {
 	m[username]++
 	mu.Unlock()
 	var checkers []namecheck.Checker
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 30; i++ {
 		t := &twitter.Twitter{
 			Client: http.DefaultClient,
 		}
@@ -98,7 +101,7 @@ func handleCheck(w http.ResponseWriter, r *http.Request) {
 	var wg sync.WaitGroup
 	wg.Add(len(checkers))
 	for _, checker := range checkers {
-		go check(checker, username, &wg, results)
+		go check(r.Context(), checker, username, &wg, results)
 	}
 	go func() {
 		wg.Wait()
@@ -134,6 +137,7 @@ func handleCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func check(
+	ctx context.Context,
 	checker namecheck.Checker,
 	username string,
 	wg *sync.WaitGroup,
@@ -149,9 +153,10 @@ func check(
 		results <- res
 		return
 	}
-	avail, err := checker.IsAvailable(username)
+	avail, err := checker.IsAvailable(ctx, username)
 	res.Available = avail
 	if err != nil {
+		fmt.Println(err)
 		res.Error = err
 	}
 	results <- res

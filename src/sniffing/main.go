@@ -14,6 +14,7 @@ func main() {
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
 	msg := r.URL.Query().Get("msg")
 	if msg == "" {
 		http.Error(w, "'msg' query param is required", http.StatusBadRequest)

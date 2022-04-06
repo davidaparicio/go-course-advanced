@@ -12,8 +12,8 @@ func main() {
 	e := echo.New()
 	// CORS middleware (configured insecurely)
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{"*"},
-		AllowCredentials: true,
+		AllowOrigins:     []string{"*"}, // Access-Control-Allow-Origin: https://attacker.com
+		AllowCredentials: true,          // Access-Control-Allow-Credentials: true
 	}))
 	// Basic Auth middleware
 	e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {

@@ -6,6 +6,7 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"sync"
 )
 
 const (
@@ -29,11 +30,17 @@ func main() {
 
 func create(width, height int) image.Image {
 	m := image.NewGray(image.Rect(0, 0, width, height))
+	var wg sync.WaitGroup
+	wg.Add(width)
 	for i := 0; i < width; i++ {
-		for j := 0; j < height; j++ {
-			m.Set(i, j, pixel(i, j, width, height))
-		}
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < height; j++ {
+				m.Set(i, j, pixel(i, j, width, height))
+			}
+		}(i)
 	}
+	wg.Wait()
 	return m
 }
 

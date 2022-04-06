@@ -1,6 +1,7 @@
 package twitter
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,6 +27,8 @@ const (
 
 var legalPattern = regexp.MustCompile("^[0-9A-Z_a-z]*$")
 
+var illegalRegexp = regexp.MustCompile("(?i)twitter")
+
 // String returns a textual representation of the Twitter type.
 func (*Twitter) String() string {
 	return "Twitter"
@@ -39,11 +42,10 @@ func (*Twitter) IsValid(username string) bool {
 		containsOnlyLegalChars(username)
 }
 
-// IsAvailable checks the availability of a username on Twitter.
-func (tw *Twitter) IsAvailable(username string) (bool, error) {
+func (tw *Twitter) IsAvailable(ctx context.Context, username string) (bool, error) {
 	const tmpl = "https://europe-west6-namechecker-api.cloudfunctions.net/userlookup?username=%s&simulateLatency=1"
 	endpoint := fmt.Sprintf(tmpl, url.QueryEscape(username))
-	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return false, err
 	}
@@ -72,6 +74,10 @@ func isShortEnough(username string) bool {
 
 func containsNoIllegalPattern(username string) bool {
 	return !strings.Contains(strings.ToLower(username), illegalPattern)
+}
+
+func containsNoIllegalPattern2(username string) bool {
+	return !illegalRegexp.MatchString(username)
 }
 
 func containsOnlyLegalChars(username string) bool {

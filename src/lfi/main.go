@@ -28,7 +28,7 @@ func main() {
 }
 
 func staticHandler(ctx *macaron.Context) (status int, out string) {
-	path := filepath.Join(pwd, "static", filepath.Clean(ctx.Params("*")))
+	path := filepath.Join(pwd, "static", filepath.Clean("/"+ctx.Params("*")))
 	log.Println(path)
 	file, err := os.Open(path)
 	if err != nil {
