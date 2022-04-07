@@ -1,5 +1,5 @@
 Formation Go avancé
-4 April 2022
+7 April 2022
 
 Julien Cretel
 jcretel-infosec@protonmail.com
@@ -323,6 +323,141 @@ No need for dependency-injection frameworks in Go! Interfaces are enough!
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/king.svg 200 _
 
+
+
+* Functional options
+
+
+
+* An example of inflexible API
+
+Consider the following function, which attempts to open a connection to the database:
+
+  // package db
+  func Open(
+    addr string,
+    cache bool,
+    logger log.Logger
+  ) (*Connection, error) {
+    // ...
+  }
+
+How is `Open`'s API problematic?
+
+: addr mandatory
+
+
+
+* An example of inflexible API (cont'd)
+
+Some parameters (`cache` and `logger`) could be optional.
+
+However, when calling a Go function, you must provide one argument per parameter. As a result, calling `Open` is rather tedious:
+
+  db.Open(addr, db.DefaultCache, zap.NewNop())
+  db.Open(addr, db.DefaultCache, log)
+  db.Open(addr, false, zap.NewNop())
+  db.Open(addr, false, log)
+
+Moreover, you cannot easily evolve `Open`'s API. For instance, adding a parameter would require the release of a new major version (if you're using [[https://semver.org/][semver]]):
+
+  // package pkg
+  func Open(
+    addr string,
+    cache bool,
+    logger log.Logger
+    timeout time.Duration,
+  ) (*Connection, error) {
+    // ...
+  }
+
+
+
+* Functional options to the rescue
+
+One useful pattern for making an API easier to use and evolve is _functional_options_.
+
+Declare an unexported struct for storing the values of optional parameters:
+
+  type options struct {
+    cache bool,
+    logger log.Logger
+  }
+
+Declare an exported interface with an unexported `apply` method:
+
+  type Option interface {
+    apply(*options)
+  }
+
+Make `Open` take a `...Option` parameter in addition to its mandatory parameter(s):
+
+  func Open(addr string, opts ...Option) (*Connection, error)
+
+
+
+* Functional options to the rescue (cont'd)
+
+For each option, declare an unexported struct type and an exported factory function:
+
+  type cacheOption bool
+
+  func (c cacheOption) apply(opts *options) {
+    opts.cache = bool(c)
+  }
+
+  func WithCache(c bool) Option {
+    return cacheOption(c)
+  }
+
+  type loggerOption struct {
+    Log log.Logger
+  }
+
+  func (l loggerOption) apply(opts *options) {
+    opts.logger = l.Log
+  }
+
+  func WithLogger(log log.Logger) Option {
+    return loggerOption{Log: log}
+  }
+
+
+
+* Functional options to the rescue (cont'd)
+
+Then, clients of your package are free to specify only the options they need:
+
+  db.Open(addr)
+  db.Open(addr, db.WithLogger(log))
+  db.Open(addr, db.WithCache(false))
+  db.Open(addr, db.WithCache(false), db.WithLogger(log))
+
+Moreover, you can always add another option later:
+
+  type timeoutOption time.Duration
+
+  func (t timeoutOption) apply(opts *options) {
+    opts.timeout = time.Duration(c)
+  }
+
+  func WithTimeout(t time.Duration) Option {
+    return timeoutOption(t)
+  }
+
+Because the signature of `Open` doesn't change, you'll only need to release a new minor version of your package.
+
+
+
+* Resources about functional options
+
+- [[https://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html][Rob Pike - Self-referential functions and the design of options]]
+- [[https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis][Dave Cheney - Functional options for friendly APIs]]
+- [[https://github.com/uber-go/guide/blob/master/style.md#functional-options][Uber Go style guide - functional options]]
+
+.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/witch-learning.svg 200 _
+
+: This is just one way of implementing _functional_options_; other people use closures.
 
 
 
