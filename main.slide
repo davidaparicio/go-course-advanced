@@ -1,5 +1,5 @@
 Formation Go avancé
-7 April 2022
+6 May 2022
 
 Julien Cretel
 jcretel-infosec@protonmail.com
@@ -110,7 +110,8 @@ Well-encapsulated types are harder to misuse and easier to evolve over time.
 For designing a type that provides behaviors and needs to maintain _invariants_, strive for an _opaque_struct_:
 
 - use a struct as the underlying type,
-- keep its fields unexported.
+- keep its fields unexported,
+- provide methods to operate on your type.
 
 
 
@@ -221,6 +222,8 @@ The need for factory functions is reduced, which leads to a smaller API.
 
 *Correctness*
 
+There's no such thing as constructors in Go.
+
 If you export a type, clients can instantiate the type in its zero value. Therefore,
 making the zero value well-behaved renders the type harder to misuse.
 
@@ -325,11 +328,7 @@ No need for dependency-injection frameworks in Go! Interfaces are enough!
 
 
 
-* Functional options
-
-
-
-* An example of inflexible API
+* A motivational example for functional options
 
 Consider the following function, which attempts to open a connection to the database:
 
@@ -337,7 +336,7 @@ Consider the following function, which attempts to open a connection to the data
   func Open(
     addr string,
     cache bool,
-    logger log.Logger
+    logger log.Logger,
   ) (*Connection, error) {
     // ...
   }
@@ -348,7 +347,7 @@ How is `Open`'s API problematic?
 
 
 
-* An example of inflexible API (cont'd)
+* A motivational example for functional options (cont'd)
 
 Some parameters (`cache` and `logger`) could be optional.
 
@@ -365,7 +364,7 @@ Moreover, you cannot easily evolve `Open`'s API. For instance, adding a paramete
   func Open(
     addr string,
     cache bool,
-    logger log.Logger
+    logger log.Logger,
     timeout time.Duration,
   ) (*Connection, error) {
     // ...
@@ -380,7 +379,7 @@ One useful pattern for making an API easier to use and evolve is _functional_opt
 Declare an unexported struct for storing the values of optional parameters:
 
   type options struct {
-    cache bool,
+    cache bool
     logger log.Logger
   }
 
@@ -885,7 +884,7 @@ The `Size` method returns the number of nodes in the tree:
     if t == nil {
       return 0
     }
-    return 1 + Size(t.Left) + Size(t.Right)
+    return 1 + t.Left.Size() + t.Right.Size()
   }
 
 See this [[https://go.dev/play/p/-x42l8-rqvK][playground]].
@@ -1104,9 +1103,7 @@ Also, methods cannot introduce additional type parameters.
 
 For instance, given the following type declaration,
 
-  type Slice[T] interface {
-    ~[]T
-  }
+  type Slice[T any] []T
 
 the following function isn't valid syntax:
 
@@ -1142,14 +1139,14 @@ Along with the golang.org/x/exp/constraints package, those two packages will lik
 
 
 
-* When comparable doesn't mean comparable
+* A comparable puzzler
 
 All interface types are comparable. For instance, it's legal to do this:
 
 .play -edit src/interfaces_are_comparable.go /^//START/,/^//END/
 
 However, many interface types, including common ones like `any` and `io.Writer`,
-do _not_ satisfy the new `comparable` interface!
+do _not_ satisfy the new `comparable` interface! 😕
 
 See [[https://github.com/golang/go/issues/51338][proposal: spec: permit values to have type "comparable"]].
 
