@@ -3,39 +3,43 @@ package bimap
 import "fmt"
 
 type Bimap struct {
-	Forward, Inverse map[string]string
+	forward, inverse map[string]string
 }
 
-func New() *Bimap {
+/*func New() *Bimap {
 	return &Bimap{
-		Forward: make(map[string]string),
-		Inverse: make(map[string]string),
+		forward: make(map[string]string),
+		inverse: make(map[string]string),
 	}
-}
+}*/
 
 func (bi *Bimap) Store(key string, value string) {
-	k, exists := bi.Inverse[value]
+	if bi.forward == nil {
+		bi.forward = make(map[string]string)
+		bi.inverse = make(map[string]string)
+	}
+	k, exists := bi.inverse[value]
 	if exists { // value is already associated with k
-		delete(bi.Forward, k)
+		delete(bi.forward, k)
 	}
-	v, exists := bi.Forward[key]
+	v, exists := bi.forward[key]
 	if exists { // key is already associated with v
-		delete(bi.Inverse, v)
+		delete(bi.inverse, v)
 	}
-	bi.Forward[key] = value
-	bi.Inverse[value] = key
+	bi.forward[key] = value
+	bi.inverse[value] = key
 }
 
 func (bi *Bimap) LookupValue(key string) (string, bool) {
-	v, ok := bi.Forward[key]
+	v, ok := bi.forward[key]
 	return v, ok
 }
 
 func (bi *Bimap) LookupKey(value string) (string, bool) {
-	k, ok := bi.Inverse[value]
+	k, ok := bi.inverse[value]
 	return k, ok
 }
 
 func (bi *Bimap) String() string {
-	return fmt.Sprintf("bi%v", bi.Forward)
+	return fmt.Sprintf("bi%v", bi.forward)
 }
