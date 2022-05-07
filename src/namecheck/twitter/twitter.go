@@ -1,3 +1,5 @@
+// Package twitter provides primitives to check if an username
+// is available on Twitter.
 package twitter
 
 import (
@@ -29,6 +31,9 @@ func (*Twitter) String() string {
 	return "Twitter"
 }
 
+// IsValid checks locally, following some assumptions
+// like characters contraints, length, etc...
+// It returns a boolean.
 func (*Twitter) IsValid(username string) bool {
 	return isLongEnough(username) &&
 		isShortEnough(username) &&
@@ -36,6 +41,8 @@ func (*Twitter) IsValid(username string) bool {
 		containsOnlyLegalChars(username)
 }
 
+// IsAvailable checks on Twitter, the availibity of the requested username.
+// It returns a boolean, and an error if something have failed.
 func (tw *Twitter) IsAvailable(username string) (bool, error) {
 	const tmpl = "https://europe-west6-namechecker-api.cloudfunctions.net/userlookup?username=%s&simulateLatency=1"
 	endpoint := fmt.Sprintf(tmpl, url.QueryEscape(username))

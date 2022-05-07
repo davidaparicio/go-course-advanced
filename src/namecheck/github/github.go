@@ -1,3 +1,5 @@
+// Package github provides primitives to check if an username
+// is available on Github.
 package github
 
 import (
