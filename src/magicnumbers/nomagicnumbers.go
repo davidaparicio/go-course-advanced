@@ -8,7 +8,8 @@ import (
 
 // START OMIT
 func IsAvailableOnGitHub(username string) (bool, error) {
-	endpoint := fmt.Sprintf("https://github.com/%s", url.PathEscape(username))
+	const tmpl = "https://github.com/%s"
+	endpoint := fmt.Sprintf(tmpl, url.PathEscape(username))
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil) // HL
 	if err != nil {
 		return false, err

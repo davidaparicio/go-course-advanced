@@ -72,7 +72,7 @@ Apply the same principle to channel capacities, slice lengths and capacities, et
 
 *reflect*
 
-Using the `reflect` package is difficult, leads unreadable code, and often creates performance issues.
+Using the `reflect` package is difficult, leads to unreadable code, and often creates performance issues.
 
 *unsafe*
 
@@ -261,7 +261,7 @@ For some types, instantiation requires additional information that only clients 
 
 When the zero value of your type isn't usable, document it!
 
-Instruct your clients to instatiate the type via a factory function.
+Instruct your clients to instantiate the type via a factory function.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/fairy-tale/witch-learning.svg 200 _
 
@@ -269,21 +269,23 @@ Instruct your clients to instatiate the type via a factory function.
 
 * Avoid unkeyed literals
 
-Unkeyed struct literals are
+Consider this struct type declaration:
 
-- less expressive,
-- more error-prone.
+.code -edit src/unkeyed_literals.go /^//START1/,/^//END1/
 
-Avoid unkeyed literal, especially for types whose declaration is outside your control:
+Here are examples of an unkeyed literal and a keyed literal:
 
-  type Location struct {
-    Lat  float64
-    Long float64
-  }
+.play -edit src/unkeyed_literals.go /^//START2/,/^//END2/
 
-  strasbourg := Location{48.5734, 7.7521}       // unkeyed literal (avoid!)
-  paris := Location{Lat: 48.8566, Long: 2.3522} // keyed literal
+You should avoid unkeyed literals (esp. of third-party types) because their
+reliance on the order of the fields in the struct type declaration makes them
 
+- less expressive (harder to write and read)
+- brittle to changes in the declaration (addition of a field, re-ordering of the fields)
+
+`go vet` is your friend!
+
+: error-prone
 : In struct literals, you can either specify all the...
 : why error prone: easier to swap the fields,
 : won't be affected by reordering of the fields in the type declaration
@@ -295,7 +297,16 @@ Avoid unkeyed literal, especially for types whose declaration is outside your co
 Adding an unexported field of type `struct{}` prevents clients of your package
 from using unkeyed literals of your type:
 
-.play -edit src/unkeyed/main.go /^//START/,/^//END/
+.play -edit src/unkeyed_literals_disallow_.go /^//START/,/^//END/
+
+You can always "hide" the existence of that unsightly unexported field by declaring an appropriate `String` method for your type:
+
+  func (l Location) String() string {
+    const tmpl = "%f°N, %f°W"
+    return fmt.Sprintf(tmpl, l.Lat, l.Long)
+  }
+
+: why empty struct{}? memory-efficient!
 
 
 
@@ -328,47 +339,51 @@ No need for dependency-injection frameworks in Go! Interfaces are enough!
 
 
 
-* A motivational example for functional options
+* Functional options: a motivational example
 
-Consider the following function, which attempts to open a connection to the database:
+Imagine you're developing a library that provides a function named `Open`, which tries to connect to a database:
 
-  // package db
-  func Open(
-    addr string,
-    cache bool,
-    logger log.Logger,
-  ) (*Connection, error) {
-    // ...
-  }
+  func Open(addr string, cache bool, logger log.Logger) (*Connection, error)
 
-How is `Open`'s API problematic?
+An address must always be specified; callers must also specify whether they wish to use caching and/or a logger.
 
-: addr mandatory
+Remember that Go has no support for optional parameters: callers of a function must provide one argument per parameter. Why, then, is `Open`'s signature problematic?
 
 
 
-* A motivational example for functional options (cont'd)
+* Functional options: a motivational example (cont'd)
 
-Some parameters (`cache` and `logger`) could be optional.
-
-However, when calling a Go function, you must provide one argument per parameter. As a result, calling `Open` is rather tedious:
+Clients of your package who don't need caching and/or a logger are forced to pass no-op arguments to `Open`:
 
   db.Open(addr, db.DefaultCache, zap.NewNop())
   db.Open(addr, db.DefaultCache, log)
   db.Open(addr, false, zap.NewNop())
   db.Open(addr, false, log)
 
-Moreover, you cannot easily evolve `Open`'s API. For instance, adding a parameter would require the release of a new major version (if you're using [[https://semver.org/][semver]]):
+Moreover, you cannot easily evolve `Open`'s API. For instance, if you're using [[https://semver.org/][semantic versioning]], adding a parameter to the `Open` function would require the release of a new major version of your library:
 
-  // package pkg
-  func Open(
-    addr string,
-    cache bool,
-    logger log.Logger,
-    timeout time.Duration,
-  ) (*Connection, error) {
-    // ...
+  func Open(addr string, cache bool, logger log.Logger, timeout time.Duration) (*Connection, error)
+
+
+
+* Functional options: a motivational example (cont'd)
+
+One solution would be to provide a variant for each possible combination, but the resulting API is unwieldy:
+
+  func Open(addr string) (*Connection, error)
+  func OpenWithCaching(addr string) (*Connection, error)
+  func OpenWithLogger(addr string, logger log.Logger) (*Connection, error)
+  func OpenWithCachingAndLogger(addr string, logger log.Logger) (*Connection, error)
+
+Another solution would be to gather all the configuration in a struct type, but the resulting API isn't very expressive and merely displaces the problem:
+
+  type Config struct {
+    Addr    string
+    Caching bool
+    Logger  log.Logger
   }
+
+  func Open(config Config) (*Connection, error)
 
 
 
@@ -409,9 +424,9 @@ For each option, declare an unexported struct type and an exported factory funct
     return cacheOption(c)
   }
 
-  type loggerOption struct {
-    Log log.Logger
-  }
+and
+
+  type loggerOption struct { Log log.Logger }
 
   func (l loggerOption) apply(opts *options) {
     opts.logger = l.Log
@@ -444,7 +459,7 @@ Moreover, you can always add another option later:
     return timeoutOption(t)
   }
 
-Because the signature of `Open` doesn't change, you'll only need to release a new minor version of your package.
+Because the signature of `Open` doesn't change, you'll only need to release a new minor (as opposed to major) version of your package.
 
 
 
@@ -484,11 +499,11 @@ You can also write [[https://go.dev/blog/examples][executable examples]], which 
 
 1. Open `go-course-advanced/src/namecheck` in VS Code.
 
-2. Describe the `twitter` package in a `twitter/doc.go` file.
+2. Write a short doc comment for the package at the top of `twitter/twitter.go`.
 
-3. Document each of the identifiers exported by `twitter`.
+3. Document each of the identifiers exported by the `twitter` package.
 
-4. Write an example test for the `IsValid` method in `twitter/example_test.go`.
+4. Write an example test for `Twitter`'s `IsValid` method in `twitter/example_test.go`.
 
 5. Generate the documentation [[https://pkg.go.dev/golang.org/x/tools/cmd/godoc][using `godoc`]].
 
