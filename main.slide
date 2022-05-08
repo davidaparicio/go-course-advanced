@@ -602,7 +602,7 @@ For convenience, you can also declare factory functions for your test-double typ
 
 2. Study the `stub` package carefully.
 
-3. In `github_test.go`, write a test that checks that, if the client responds with a 200, the `IsAvailable` method returns
+3. In `github_test.go`, write a test to check that, if the client responds with a 200, the `IsAvailable` method returns
 
   false, nil
 
@@ -907,6 +907,7 @@ See this [[https://go.dev/play/p/-x42l8-rqvK][playground]].
 What if you wanted nodes to hold values of type `string` instead?
 
 
+
 * Before generics: the code duplication / generation approach
 
 You could manually duplicate the type declaration in your code:
@@ -1017,6 +1018,22 @@ At call sites, you must usually specify type arguments for the required type par
 3. What would you have had to do before Go 1.18?
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
+
+
+
+* Obtaining the zero value of a type parameter
+
+Consider this generic function for accessing the last element (if any) of a slice.
+
+  func Last[E any](s []E) (E, bool)
+
+In the case of a nil or empty slice, you should return the zero value of the element type.
+
+How? Remember that declaring a variable of a given type without initializing the variable yields the zero value of that type:
+
+.play -edit src/type_parameter_zero.go /^//START/,/^//END/
+
+See [[https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md#the-zero-value][Type Parameters Proposal - The zero value]].
 
 
 
