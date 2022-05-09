@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -59,8 +60,20 @@ func main() {
 	for {
 		select {
 		case err := <-errc:
-			const tmpl = "namecheck: some error occurred: %s\n"
-			fmt.Fprintf(os.Stderr, tmpl, err)
+			//OLD
+			//const tmpl = "namecheck: some error occurred: %s\n"
+			//fmt.Fprintf(os.Stderr, tmpl, err)
+			//NEW since the Go 1.13
+			/*type wrapper interface{ Unwrap() error }
+			if err, ok := err.(wrapper); ok { // err has a cause
+				// call err.Unwrap to access the error that caused err
+				fmt.Println(err.Unwrap())
+			}*/
+			var uae *namecheck.UnknownAvailabilityError
+			// Errors.Is for default errrors
+			if errors.As(err, &uae) {
+				fmt.Println(uae.Platform, uae.Username)
+			}
 			return
 		case res, ok := <-results:
 			if !ok {
