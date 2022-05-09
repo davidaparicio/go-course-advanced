@@ -3,8 +3,8 @@ package twitter_test
 import (
 	"testing"
 
-	"github.com/jub0bs/namecheck"
-	"github.com/jub0bs/namecheck/twitter"
+	"github.com/davidaparicio/namecheck"
+	"github.com/davidaparicio/namecheck/twitter"
 )
 
 var _ namecheck.Checker = (*twitter.Twitter)(nil)

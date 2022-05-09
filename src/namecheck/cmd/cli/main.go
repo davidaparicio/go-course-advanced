@@ -8,9 +8,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/jub0bs/namecheck"
-	"github.com/jub0bs/namecheck/github"
-	"github.com/jub0bs/namecheck/twitter"
+	"github.com/davidaparicio/namecheck"
+	"github.com/davidaparicio/namecheck/github"
+	"github.com/davidaparicio/namecheck/twitter"
 )
 
 type Status int

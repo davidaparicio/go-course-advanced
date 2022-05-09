@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/jub0bs/namecheck"
+	"github.com/davidaparicio/namecheck"
 )
 
 type clientFunc func(*http.Request) (*http.Response, error)

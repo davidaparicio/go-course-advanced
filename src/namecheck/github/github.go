@@ -10,7 +10,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/jub0bs/namecheck"
+	"github.com/davidaparicio/namecheck"
+	"github.com/davidaparicio/namecheck/internal"
 )
 
 type GitHub struct {
@@ -32,7 +33,7 @@ func (*GitHub) String() string {
 }
 
 func (*GitHub) IsValid(username string) bool {
-	return isLongEnough(username) &&
+	return internal.IsLongEnough(username, minLen) &&
 		isShortEnough(username) &&
 		containsNoIllegalPattern(username) &&
 		containsOnlyLegalChars(username) &&
@@ -63,10 +64,6 @@ func (gh *GitHub) IsAvailable(username string) (bool, error) {
 	}
 	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusNotFound, nil
-}
-
-func isLongEnough(username string) bool {
-	return utf8.RuneCountInString(username) >= minLen
 }
 
 func isShortEnough(username string) bool {

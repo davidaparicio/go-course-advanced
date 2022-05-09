@@ -12,7 +12,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/jub0bs/namecheck"
+	"github.com/davidaparicio/namecheck"
+	"github.com/davidaparicio/namecheck/internal"
 )
 
 type Twitter struct {
@@ -35,7 +36,7 @@ func (*Twitter) String() string {
 // like characters contraints, length, etc...
 // It returns a boolean.
 func (*Twitter) IsValid(username string) bool {
-	return isLongEnough(username) &&
+	return internal.IsLongEnough(username, minLen) &&
 		isShortEnough(username) &&
 		containsNoIllegalPattern(username) &&
 		containsOnlyLegalChars(username)
@@ -67,10 +68,6 @@ func (tw *Twitter) IsAvailable(username string) (bool, error) {
 	}
 	// the absence of a data field in the response body indicates the username's availability
 	return dto.Data == nil, nil
-}
-
-func isLongEnough(username string) bool {
-	return utf8.RuneCountInString(username) >= minLen
 }
 
 func isShortEnough(username string) bool {

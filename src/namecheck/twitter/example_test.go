@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jub0bs/namecheck/twitter"
+	"github.com/davidaparicio/namecheck/twitter"
 )
 
-func ExampleTwitter_IsValid(){
+func ExampleTwitter_IsValid() {
 	var tw twitter.Twitter
 	fmt.Println(tw.IsValid("eczxaw"))
 	// Output: true
 }
 
-func ExampleTwitter_IsAvailable(){
+func ExampleTwitter_IsAvailable() {
 	t := twitter.Twitter{
 		Client: http.DefaultClient,
 	}

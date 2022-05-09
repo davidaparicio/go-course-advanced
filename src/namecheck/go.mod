@@ -1,4 +1,4 @@
-module github.com/jub0bs/namecheck
+module github.com/davidaparicio/namecheck
 
 go 1.16
 

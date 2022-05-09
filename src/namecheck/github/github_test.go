@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/jub0bs/namecheck"
-	"github.com/jub0bs/namecheck/github"
-	"github.com/jub0bs/namecheck/stub"
+	"github.com/davidaparicio/namecheck"
+	"github.com/davidaparicio/namecheck/github"
+	"github.com/davidaparicio/namecheck/stub"
 )
 
 var _ namecheck.Checker = (*github.GitHub)(nil)
