@@ -12,7 +12,7 @@ func Last[E any](s []E) (E, bool) {
 }
 
 func main() {
-	fmt.Println([]int{}) // 0 false
+	fmt.Println(Last([]int{})) // 0 false
 }
 
 // END OMIT
