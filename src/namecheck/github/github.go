@@ -41,14 +41,25 @@ func (*GitHub) IsValid(username string) bool {
 }
 
 func (gh *GitHub) IsAvailable(username string) (bool, error) {
+	// Test new error: endpoint := fmt.Sprintf("https://githubnkdnakndakadnkadsndsk.com/%s", url.PathEscape(username))
 	endpoint := fmt.Sprintf("https://github.com/%s", url.PathEscape(username))
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
-		return false, err
+		err := namecheck.UnknownAvailabilityError{
+			Username: username,
+			Platform: gh.String(),
+			Cause:    err,
+		}
+		return false, &err
 	}
 	resp, err := gh.Client.Do(req)
 	if err != nil {
-		return false, err
+		err := namecheck.UnknownAvailabilityError{
+			Username: username,
+			Platform: gh.String(),
+			Cause:    err,
+		}
+		return false, &err
 	}
 	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusNotFound, nil
