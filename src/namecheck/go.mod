@@ -1,4 +1,4 @@
-module github.com/davidaparicio/namecheck
+module github.com/davidaparicio/go-course-advanced/src/namecheck
 
 go 1.16
 

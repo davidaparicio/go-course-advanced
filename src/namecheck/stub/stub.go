@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/davidaparicio/namecheck"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck"
 )
 
 type clientFunc func(*http.Request) (*http.Response, error)

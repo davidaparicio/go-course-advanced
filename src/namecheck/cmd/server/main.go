@@ -8,9 +8,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/davidaparicio/namecheck"
-	"github.com/davidaparicio/namecheck/github"
-	"github.com/davidaparicio/namecheck/twitter"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck/github"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck/twitter"
 	"github.com/gorilla/mux"
 )
 

@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/davidaparicio/namecheck"
-	"github.com/davidaparicio/namecheck/github"
-	"github.com/davidaparicio/namecheck/stub"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck/github"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck/stub"
 )
 
 var _ namecheck.Checker = (*github.GitHub)(nil)

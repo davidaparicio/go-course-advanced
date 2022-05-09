@@ -8,9 +8,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/davidaparicio/namecheck"
-	"github.com/davidaparicio/namecheck/github"
-	"github.com/davidaparicio/namecheck/twitter"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck/github"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck/twitter"
 )
 
 type Status int

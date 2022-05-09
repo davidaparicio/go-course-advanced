@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/davidaparicio/namecheck/twitter"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck/twitter"
 )
 
 func ExampleTwitter_IsValid() {

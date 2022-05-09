@@ -10,8 +10,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/davidaparicio/namecheck"
-	"github.com/davidaparicio/namecheck/internal"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck/internal"
 )
 
 type GitHub struct {

@@ -3,8 +3,8 @@ package twitter_test
 import (
 	"testing"
 
-	"github.com/davidaparicio/namecheck"
-	"github.com/davidaparicio/namecheck/twitter"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck"
+	"github.com/davidaparicio/go-course-advanced/src/namecheck/twitter"
 )
 
 var _ namecheck.Checker = (*twitter.Twitter)(nil)
