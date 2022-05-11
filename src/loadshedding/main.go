@@ -24,11 +24,16 @@ func NewServer(maxConcurrent int) (*Server, error) {
 
 func (srv *Server) HelloWorld() http.HandlerFunc {
 	h := func(w http.ResponseWriter, r *http.Request) {
-		srv.sem <- struct{}{}
-		defer func() { <-srv.sem }()
-		time.Sleep(5 * time.Second) // simulate work
 		w.Header().Set("Content-Type", "text/plain")
-		fmt.Fprint(w, "Hello, World!")
+		select {
+		case srv.sem <- struct{}{}:
+			defer func() { <-srv.sem }()
+			time.Sleep(5 * time.Second) // simulate work
+			fmt.Fprint(w, "Hello, World!")
+		default:
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
 	}
 	return h
 }
