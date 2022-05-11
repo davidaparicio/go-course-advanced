@@ -3,6 +3,7 @@
 package twitter
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -44,10 +45,10 @@ func (*Twitter) IsValid(username string) bool {
 
 // IsAvailable checks on Twitter, the availibity of the requested username.
 // It returns a boolean, and an error if something have failed.
-func (tw *Twitter) IsAvailable(username string) (bool, error) {
+func (tw *Twitter) IsAvailable(ctx context.Context, username string) (bool, error) {
 	const tmpl = "https://europe-west6-namechecker-api.cloudfunctions.net/userlookup?username=%s&simulateLatency=1"
 	endpoint := fmt.Sprintf(tmpl, url.QueryEscape(username))
-	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return false, err
 	}

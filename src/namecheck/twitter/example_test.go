@@ -1,6 +1,7 @@
 package twitter_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -17,8 +18,8 @@ func ExampleTwitter_IsAvailable() {
 	t := twitter.Twitter{
 		Client: http.DefaultClient,
 	}
-	fmt.Println(t.IsAvailable("dadideo"))
-	fmt.Println(t.IsAvailable("eczxaw"))
+	fmt.Println(t.IsAvailable(context.Background(), "dadideo"))
+	fmt.Println(t.IsAvailable(context.Background(), "eczxaw"))
 	// Output:
 	// false <nil>
 	// true <nil>

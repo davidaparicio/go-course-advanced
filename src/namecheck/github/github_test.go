@@ -1,6 +1,7 @@
 package github_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -31,7 +32,7 @@ func TestIsAvailableNot200(t *testing.T) {
 		Client: stub.ClientWithStatusCode(http.StatusOK),
 	}
 	username := "whatever"
-	avail, err := gh.IsAvailable(username)
+	avail, err := gh.IsAvailable(context.Background(), username)
 	if avail || err != nil {
 		t.Error("IsAvailable must return a 404 status code")
 	}

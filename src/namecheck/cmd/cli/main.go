@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/davidaparicio/go-course-advanced/src/namecheck"
 	"github.com/davidaparicio/go-course-advanced/src/namecheck/github"
@@ -49,8 +51,10 @@ func main() {
 	errc := make(chan error, len(checkers))
 	var wg sync.WaitGroup
 	wg.Add(len(checkers))
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 	for _, checker := range checkers {
-		go check(checker, username, &wg, results, errc)
+		go check(ctx, checker, username, &wg, results, errc)
 	}
 	go func() {
 		wg.Wait()
@@ -74,6 +78,7 @@ func main() {
 			if errors.As(err, &uae) {
 				fmt.Println(uae.Platform, uae.Username)
 			}
+			fmt.Println(err)
 			return
 		case res, ok := <-results:
 			if !ok {
@@ -85,6 +90,7 @@ func main() {
 }
 
 func check(
+	ctx context.Context,
 	checker namecheck.Checker,
 	username string,
 	wg *sync.WaitGroup,
@@ -101,7 +107,7 @@ func check(
 		results <- res
 		return
 	}
-	avail, err := checker.IsAvailable(username)
+	avail, err := checker.IsAvailable(ctx, username)
 	if err != nil {
 		errc <- err
 		return
