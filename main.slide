@@ -1194,22 +1194,39 @@ This state of affairs gives rise to surprising and disheartening limitations...
 
 However, because `io.Writer` interface does not implement `comparable`, passing a map whose key type is `io.Writer` to `maps.Values` is illegal:
 
-  m := map[io.Writer]int{os.Stdout: 1, os.Stderr: 2}
+  m := map[io.Writer]int{
+    os.Stdout: 1,
+    os.Stderr: 2,
+  }
   fmt.Println(maps.Values(m)) // compilation error
 
 See [[https://go.dev/play/p/d2PwT6lXLwS][this playground]].
 
 
 
-* Recursive type bound
+* Recursive type constraint
 
 How would you express the constraint "any type `T` that has a `Less(T)` bool method"?
 
-You can achieve that in Go 1.18+ using a trick similar to Java's _recursive_type_bound_.
+You can achieve that in Go 1.18+ using a trick similar to Java's _recursive_type_bound_:
 
-See [[https://go.dev/play/p/9AocjmraWHC][this playground]].
+  type Lesser[T any] interface {
+    Less(T) bool
+  }
 
-See also [[https://stackoverflow.com/a/68868092/2541573][this Stack Overflow answer]].
+  func IsLess[T Lesser[T]](lhs, rhs T) bool {
+    return lhs.Less(rhs)
+  }
+
+The following concrete type satisfies the `Lesser[Apple]` interface:
+
+  type Apple int
+
+  func (lhs Apple) Less(rhs Apple) bool {
+    return lhs < rhs
+  }
+
+See [[https://go.dev/play/p/9AocjmraWHC][this playground]] and [[https://stackoverflow.com/a/68868092/2541573][this Stack Overflow answer]].
 
 
 
@@ -1324,7 +1341,7 @@ Important: If you fail to cancel a context that you've derived, you'll leak reso
 
 * Contexts form a tree
 
-In memory, contexts form a tree whose root is a special context: `context.Background()`.
+In memory, contexts form a tree whose root is a special, uncancellable context, which is returned by the `context.Background()` function.
 
 Cancellation signals flow from top to bottom: cancelling a node of the context tree also cancels all of the contexts derived from it.
 
@@ -1383,11 +1400,11 @@ Never use `nil` where a `Context` is required!
 
 If you're unsure which context to use somewhere, avoid using `context.Background()`.
 
-Instead, for the time being, use the dummy context `context.TODO()`.
+Instead, temporarily use the dummy (uncancellable) context return by the `context.TODO()` function.
 
 Revisit the code later, once you've figured out where to obtain a proper context from.
 
-.image https://go.dev/blog/gopher/plush.jpg 300 _
+.image https://go.dev/blog/gopher/plush.jpg 250 _
 
 
 
@@ -1413,7 +1430,7 @@ See [[https://go.dev/blog/context-and-structs][Contexts and structs]] on the Gol
 
 4. Start the server.
 
-5. Exercise the `check` endpoint in your browser and immediately close your browser tab.
+5. Exercise the `check` endpoint in your browser and quickly close your browser tab.
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
 
@@ -2260,22 +2277,6 @@ The respective columns correspond to
 5. Which implementation do you favor? Why?
 
 .image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
-
-
-
-* Exercise: optimize the stringset library
-
-1. Open `go-course-advanced/src/stringset` in VS Code. Get familiar with the code.
-
-2. Without changing the package's API, identify areas for improvement in the implementation.
-
-3. Perform those improvements one by one.
-
-4. Don't guess! Validate they are indeed improvements with microbenchmarks.
-
-.image https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/gotham.svg 200 _
-
-: used quite extensively in a security tool
 
 
 
