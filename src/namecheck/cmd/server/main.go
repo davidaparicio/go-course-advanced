@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	//Be carefull!!! http://mmcloughlin.com/posts/your-pprof-is-showing
+	//_ "net/http/pprof"
+
 	"sync"
 	"sync/atomic"
 
