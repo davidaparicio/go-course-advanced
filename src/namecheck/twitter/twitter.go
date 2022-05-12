@@ -28,6 +28,7 @@ const (
 )
 
 var legalPattern = regexp.MustCompile("^[0-9A-Z_a-z]*$")
+var illegalPattern2 = regexp.MustCompile("(?i)twitter")
 
 func (*Twitter) String() string {
 	return "Twitter"
@@ -77,6 +78,10 @@ func isShortEnough(username string) bool {
 
 func containsNoIllegalPattern(username string) bool {
 	return !strings.Contains(strings.ToLower(username), illegalPattern)
+}
+
+func containsNoIllegalPattern2(username string) bool {
+	return !illegalPattern2.MatchString(username)
 }
 
 func containsOnlyLegalChars(username string) bool {
