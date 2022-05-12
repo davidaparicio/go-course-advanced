@@ -1,0 +1,8 @@
+# mandelbrot
+*.pprof
+# namecheck + mandelbrot
+*.out
+# mandelbrot
+out.png
+# memorylayout
+*.mem
