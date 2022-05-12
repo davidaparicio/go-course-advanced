@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -14,24 +15,37 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+func get(ctx context.Context, results chan Result, dc string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	res, err := fetchFrom(ctx, dc)
+	if err != nil {
+		return
+	}
+	results <- res
+}
+
 func main() {
-	dc := "Strasbourg"
+	//dc := "Strasbourg"
+	dcs := []string{"Strasbourg", "Roubaix", "Paris", "Sydney", "Beauharnois"}
 	results := make(chan Result)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 700*time.Millisecond)
 	defer cancel()
-	go func() {
-		res, err := fetchFrom(ctx, dc)
-		if err != nil {
-			return
-		}
-		results <- res
-	}()
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	wg.Add(len(dcs))
+
+	for _, dc := range dcs {
+		go get(ctx, results, dc, &wg)
+	}
 	select {
 	case <-ctx.Done():
 		fmt.Fprintln(os.Stderr, ctx.Err())
 		return
 	case res := <-results:
 		fmt.Println(res)
+		cancel()
 	}
 }
 
