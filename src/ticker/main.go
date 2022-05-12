@@ -17,6 +17,8 @@ func main() {
 
 // START OMIT
 func foo(ctx context.Context) {
+	// proposal: Go 2: time: deprecate time.Tick(d Duration) #37144 
+	// https://github.com/golang/go/issues/37144
 	ticker := time.NewTicker(500 * time.Millisecond)
 	for {
 		select {
