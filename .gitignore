@@ -6,3 +6,5 @@
 out.png
 # memorylayout
 *.mem
+# reducebinsize
+main_*
