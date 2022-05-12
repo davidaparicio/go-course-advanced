@@ -10,8 +10,11 @@ import (
 type Server struct{}
 
 func (s *Server) Foo() http.HandlerFunc {
-	msg := s.initializeFoo()
+	//var once sync.Once
+	var msg string
 	f := func(w http.ResponseWriter, r *http.Request) {
+		//once.Do(func() { msg = s.initializeFoo() })
+		msg = s.initializeFoo()
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, msg)
 	}
