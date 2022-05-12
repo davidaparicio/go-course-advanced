@@ -35,16 +35,33 @@ func main() {
 func create(width, height int) image.Image {
 	m := image.NewGray(image.Rect(0, 0, width, height))
 	var wg sync.WaitGroup
-	wg.Add(width)
+	sem := make(chan struct{}, 16)
 	for i := 0; i < width; i++ {
+		sem <- struct{}{}
+		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
+			defer func() { <-sem }()
 			for j := 0; j < height; j++ {
 				m.Set(i, j, pixel(i, j, width, height))
 			}
-			wg.Done()
 		}(i)
 	}
 	wg.Wait()
+	/*
+		//1st optimization
+		var wg sync.WaitGroup
+		wg.Add(width)
+		for i := 0; i < width; i++ {
+			go func(i int) {
+				defer wg.Done()
+				for j := 0; j < height; j++ {
+					m.Set(i, j, pixel(i, j, width, height))
+				}
+			}(i)
+		}
+		wg.Wait()
+	*/
 	return m
 }
 
