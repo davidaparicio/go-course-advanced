@@ -28,7 +28,11 @@ func main() {
 }
 
 func staticHandler(ctx *macaron.Context) (status int, out string) {
-	path := filepath.Join(pwd, "static", filepath.Clean(ctx.Params("*")))
+	// Without => curl --path-as-is http://localhost:8081/static/../main.go
+	// curl --path-as-is http://localhost:8081/static/../../../../../../../../../../../../../../../../../etc/passwd
+	// path := filepath.Join(pwd, "static", filepath.Clean(ctx.Params("*")))
+	// The patch
+	path := filepath.Join(pwd, "static", filepath.Clean("/"+ctx.Params("*")))
 	log.Println(path)
 	file, err := os.Open(path)
 	if err != nil {
