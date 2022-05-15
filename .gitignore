@@ -8,3 +8,5 @@ out.png
 *.mem
 # reducebinsize
 exec_*
+# fuzz-palindrome
+testdata/
