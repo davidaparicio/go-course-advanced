@@ -15,6 +15,9 @@ func main() {
 
 // https://julien.ponge.org/blog/playing-with-test-fuzzing-in-go/
 func isPalindrome(str string) bool {
+	/*if !utf8.ValidString(str) {
+		return false
+	}*/
 	first := 0
 	last := len(str) - 1
 	for first <= last {
@@ -36,7 +39,43 @@ func reverse(str string) string {
 	return string(res)
 }
 
+// "FIXED OF Let's Fuzz [1/3]"
+func isPalindrome_Fixed(str string) bool {
+	if !utf8.ValidString(str) {
+		return false
+	}
+	first := 0
+	last := len(str) - 1
+	for first <= last {
+		if str[first] != str[last] {
+			return false
+		}
+		first++
+		last--
+	}
+	return true
+}
+
+// "FIXED OF Let's Fuzz [2/3]"
 func isPalindrom_WithRune(str string) bool {
+	if !utf8.ValidString(str) {
+		return false
+	}
+	r := []rune(str)
+	first := 0
+	last := len(r) - 1
+	for first <= last {
+		if r[first] != r[last] {
+			return false
+		}
+		first++
+		last--
+	}
+	return true
+}
+
+// "FIXED OF Let's Fuzz [3/3]"
+func IsPalindrome_WithRune_Final(str string) bool {
 	if !utf8.ValidString(str) {
 		return false
 	}
