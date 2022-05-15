@@ -1,9 +1,9 @@
 #!/bin/sh
 
-go build -o main_init main.go 
-go build -o main_sol1 -ldflags="-s -w" main.go 
-cp main_sol1 main_sol2
+go build -o exec_init main.go 
+go build -o exec_sol1 -ldflags="-s -w" main.go 
+cp exec_sol1 exec_sol2
 #brew install upx
-upx --brute main_sol2
+upx --brute exec_sol2
 
-ls -la main_init main_sol1 main_sol2
+ls -la exec_init exec_sol1 exec_sol2
