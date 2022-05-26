@@ -58,23 +58,25 @@ func FuzzReverse(f *testing.F) {
 	})
 }
 
-func BenchmarkReverse(b *testing.B) {
-	strings := []string{"", "bar", "eye", "foo"}
+func benchmarkReverse(b *testing.B, s []string) {
+	// b is lowcase to avoid the error: wrong signature for BenchmarkReverse,
+	// must be: func BenchmarkReverse(b *testing.B)
 	for i := 0; i < b.N; i++ {
-		for _, str := range strings {
+		for _, str := range s {
 			Reverse(str)
 		}
 	}
 }
 
+func BenchmarkReverse_Simple(b *testing.B) {
+	s := []string{"", "bar", "eye", "foo"}
+	benchmarkReverse(b, s)
+}
+
 func BenchmarkReverse_BigInputs(b *testing.B) {
-	strings := []string{
+	s := []string{
 		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent lacinia quam in elit laoreet rutrum ac id ante. Aliquam at mollis felis. Nam congue orci non vestibulum blandit. Fusce efficitur ligula lorem, eu cursus enim varius eget. Mauris hendrerit auctor mattis. Pellentesque et luctus nibh. Integer eget mi sed dolor.",
 		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. In aliquam purus volutpat mattis bibendum. Donec eget feugiat diam. Phasellus id diam dolor. Proin quis lobortis.",
 	}
-	for i := 0; i < b.N; i++ {
-		for _, str := range strings {
-			Reverse(str)
-		}
-	}
+	benchmarkReverse(b, s)
 }
