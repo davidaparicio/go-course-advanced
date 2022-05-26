@@ -1,123 +1,80 @@
 package main
 
 import (
-	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
-func TestIsPalindrome(t *testing.T) {
-	tests := []struct {
-		str  string
-		want bool
+func TestReverse(t *testing.T) {
+	testcases := []struct {
+		in, want string
 	}{
-		{
-			str:  "eye",
-			want: true,
-		},
-		{
-			str:  "1221",
-			want: true,
-		},
-		{
-			str:  "//--//",
-			want: true,
-		},
-		{
-			str:  "foo",
-			want: false,
-		},
+		{"Hello, world", "dlrow ,olleH"},
+		{" ", " "},
+		{"!12345", "54321!"},
 	}
-	var desc strings.Builder
-	for _, tt := range tests {
-		desc.WriteString(tt.str)
-		// https://stackoverflow.com/questions/1760757/how-to-efficiently-concatenate-strings-in-go
-		desc.WriteString(" isPalindrome")
-		// https://go.dev/blog/subtests
-		t.Run(desc.String(), func(t *testing.T) {
-			if got := isPalindrome(tt.str); got != tt.want {
-				t.Errorf("IsPalindrome() = %v, want %v", got, tt.want)
-			}
-		})
-		desc.WriteString(" 2")
-		t.Run(desc.String(), func(t *testing.T) {
-			if got := isPalindrome(tt.str); got != tt.want {
-				t.Errorf("IsPalindrome() = %v, want %v", got, tt.want)
-			}
-		})
+	for _, tc := range testcases {
+		rev, err := Reverse(tc.in)
+		if err != nil {
+			return
+		}
+		if rev != tc.want {
+			t.Errorf("Reverse: %q, want %q", rev, tc.want)
+		}
 	}
 }
 
-func BenchmarkIsPalindrome(b *testing.B) {
+//dummy test that executes main()
+//https://stackoverflow.com/a/51277293
+func TestRunMain(t *testing.T) {
+	main()
+}
+
+func FuzzReverse(f *testing.F) {
+	testcases := []string{"Hello, world", " ", "!12345"}
+	for _, tc := range testcases {
+		f.Add(tc) // Use f.Add to provide a seed corpus
+	}
+	f.Fuzz(func(t *testing.T, orig string) {
+		rev, err1 := Reverse(orig)
+		if err1 != nil {
+			//return
+			// Rather than returning, you can also call t.Skip()
+			// to stop the execution of that fuzz input.
+			t.Skip()
+		}
+		doubleRev, err2 := Reverse(rev)
+		if err2 != nil {
+			t.Skip()
+		}
+		//Log added to understand better
+		t.Logf("Number of runes: orig=%d, rev=%d, doubleRev=%d", utf8.RuneCountInString(orig), utf8.RuneCountInString(rev), utf8.RuneCountInString(doubleRev))
+		if orig != doubleRev {
+			t.Errorf("Before: %q, after: %q", orig, doubleRev)
+		}
+		if utf8.ValidString(orig) && !utf8.ValidString(rev) {
+			t.Errorf("Reverse produced invalid UTF-8 string %q", rev)
+		}
+	})
+}
+
+func BenchmarkReverse(b *testing.B) {
 	strings := []string{"", "bar", "eye", "foo"}
 	for i := 0; i < b.N; i++ {
 		for _, str := range strings {
-			isPalindrome(str)
+			Reverse(str)
 		}
 	}
 }
 
-func BenchmarkIsPalindrome_BigInputs(b *testing.B) {
-	strings := []string{"tattarrattat", "saippuakivikauppias"}
+func BenchmarkReverse_BigInputs(b *testing.B) {
+	strings := []string{
+		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent lacinia quam in elit laoreet rutrum ac id ante. Aliquam at mollis felis. Nam congue orci non vestibulum blandit. Fusce efficitur ligula lorem, eu cursus enim varius eget. Mauris hendrerit auctor mattis. Pellentesque et luctus nibh. Integer eget mi sed dolor.",
+		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. In aliquam purus volutpat mattis bibendum. Donec eget feugiat diam. Phasellus id diam dolor. Proin quis lobortis.",
+	}
 	for i := 0; i < b.N; i++ {
 		for _, str := range strings {
-			isPalindrome(str)
+			Reverse(str)
 		}
 	}
 }
-
-func FuzzIsPalindrome(f *testing.F) {
-	f.Add("kayak")
-	f.Fuzz(func(t *testing.T, str string) {
-		t1 := IsPalindrome_WithRune_Final(str)
-		t2 := reverse(str) == str
-		if t1 != t2 {
-			t.Fail()
-		}
-	})
-}
-
-/*
-func FuzzIsPalindrome_1(f *testing.F) {
-	f.Add("kayak")
-	f.Fuzz(func(t *testing.T, str string) {
-		t1 := isPalindrome(str)
-		t2 := reverse(str) == str
-		if t1 != t2 {
-			t.Fail()
-		}
-	})
-}
-
-func FuzzIsPalindrome_2(f *testing.F) {
-	f.Add("kayak")
-	f.Fuzz(func(t *testing.T, str string) {
-		t1 := isPalindrome_Fixed(str)
-		t2 := reverse(str) == str
-		if t1 != t2 {
-			t.Fail()
-		}
-	})
-}
-
-func FuzzIsPalindrome_3(f *testing.F) {
-	f.Add("kayak")
-	f.Fuzz(func(t *testing.T, str string) {
-		t1 := isPalindrom_WithRune(str)
-		t2 := reverse(str) == str
-		if t1 != t2 {
-			t.Fail()
-		}
-	})
-}
-
-func FuzzIsPalindrome_4(f *testing.F) {
-	f.Add("kayak")
-	f.Fuzz(func(t *testing.T, str string) {
-		t1 := IsPalindrome_WithRune_Final(str)
-		t2 := reverse(str) == str
-		if t1 != t2 {
-			t.Fail()
-		}
-	})
-}
-*/

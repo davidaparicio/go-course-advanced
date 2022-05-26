@@ -1,93 +1,31 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"unicode/utf8"
 )
 
+func Reverse(s string) (string, error) {
+	//r := []byte(s) // bad version
+	if !utf8.ValidString(s) { // good version V2
+		return s, errors.New("input is not valid UTF-8")
+	}
+	r := []rune(s) // good version V1
+	//FOR DEBUGGING
+	/*fmt.Printf("input: %q\n", s)
+	fmt.Printf("runes: %q\n", r)*/
+	for i, j := 0, len(r)-1; i < len(r)/2; i, j = i+1, j-1 {
+		r[i], r[j] = r[j], r[i]
+	}
+	return string(r), nil
+}
+
 func main() {
-	strs := []string{"foo", "madam", "kayak", "bar", "//--//", "eye"}
-	for _, str := range strs {
-		fmt.Printf("Is '%s' a palindrome ? %t\n", str, isPalindrome(str))
-		//https://pkg.go.dev/fmt#hdr-Printing
-	}
-}
-
-// https://julien.ponge.org/blog/playing-with-test-fuzzing-in-go/
-func isPalindrome(str string) bool {
-	/*if !utf8.ValidString(str) {
-		return false
-	}*/
-	first := 0
-	last := len(str) - 1
-	for first <= last {
-		if str[first] != str[last] {
-			return false
-		}
-		first++
-		last--
-	}
-	return true
-}
-
-func reverse(str string) string {
-	r := []rune(str)
-	var res []rune
-	for i := len(r) - 1; i >= 0; i-- {
-		res = append(res, r[i])
-	}
-	return string(res)
-}
-
-// "FIXED OF Let's Fuzz [1/3]"
-func isPalindrome_Fixed(str string) bool {
-	if !utf8.ValidString(str) {
-		return false
-	}
-	first := 0
-	last := len(str) - 1
-	for first <= last {
-		if str[first] != str[last] {
-			return false
-		}
-		first++
-		last--
-	}
-	return true
-}
-
-// "FIXED OF Let's Fuzz [2/3]"
-func isPalindrom_WithRune(str string) bool {
-	if !utf8.ValidString(str) {
-		return false
-	}
-	r := []rune(str)
-	first := 0
-	last := len(r) - 1
-	for first <= last {
-		if r[first] != r[last] {
-			return false
-		}
-		first++
-		last--
-	}
-	return true
-}
-
-// "FIXED OF Let's Fuzz [3/3]"
-func IsPalindrome_WithRune_Final(str string) bool {
-	if !utf8.ValidString(str) {
-		return false
-	}
-	r := []rune(str)
-	first := 0
-	last := len(r) - 1
-	for first <= last {
-		if r[first] != r[last] {
-			return false
-		}
-		first++
-		last--
-	}
-	return true
+	input := "The quick brown fox jumped over the lazy dog"
+	rev, revErr := Reverse(input)
+	doubleRev, doubleRevErr := Reverse(rev)
+	fmt.Printf("original: %q\n", input)
+	fmt.Printf("reversed: %q, err: %v\n", rev, revErr)
+	fmt.Printf("reversed again: %q, err: %v\n", doubleRev, doubleRevErr)
 }
