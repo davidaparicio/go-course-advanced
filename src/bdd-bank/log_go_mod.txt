@@ -1,0 +1,43 @@
+godog
+Use of godog without a sub-command is deprecated. Please use godog build, godog run or godog version.
+Feature: bank account
+  A user's bank account must be able to withdraw and deposit cash
+
+  Scenario: Deposit                      # features/account.feature:4
+    Given I have a bank account with 10$
+    When I deposit 10$
+    Then it should have a balance of 20$
+
+  Scenario: Withdrawal                   # features/account.feature:9
+    Given I have a bank account with 20$
+    When I withdraw 10$
+    Then it should have a balance of 10$
+
+2 scenarios (2 undefined)
+6 steps (6 undefined)
+396.432µs
+
+You can implement step definitions for undefined steps with these snippets:
+
+func iDeposit(arg1 int) error {
+	return godog.ErrPending
+}
+
+func iHaveABankAccountWith(arg1 int) error {
+	return godog.ErrPending
+}
+
+func iWithdraw(arg1 int) error {
+	return godog.ErrPending
+}
+
+func itShouldHaveABalanceOf(arg1 int) error {
+	return godog.ErrPending
+}
+
+func InitializeScenario(ctx *godog.ScenarioContext) {
+	ctx.Step(`^I deposit (\d+)\$$`, iDeposit)
+	ctx.Step(`^I have a bank account with (\d+)\$$`, iHaveABankAccountWith)
+	ctx.Step(`^I withdraw (\d+)\$$`, iWithdraw)
+	ctx.Step(`^it should have a balance of (\d+)\$$`, itShouldHaveABalanceOf)
+}
