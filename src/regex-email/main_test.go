@@ -6,12 +6,12 @@ import (
 	"unicode/utf8"
 )
 
-/*Don’t Test Main: dummy test that executes main()
+//Don’t Test Main: dummy test that executes main()
 //https://fossa.com/blog/golang-best-practices-testing-go/#Don't
 //https://stackoverflow.com/a/51277293
 func TestRunMain(t *testing.T) {
 	main()
-}*/
+}
 
 func TestIsValidEmail(t *testing.T) {
 	testcases := []struct {
@@ -37,6 +37,7 @@ func TestIsValidEmail(t *testing.T) {
 		{"\" \"@example.org", false, true},                                  //for the current regex
 		{"example@localhost", true, true},
 		{"user@[IPv6:2001:db8::1]", false, true}, //for the current regex
+		{"email@123.123.123.123", true, true},
 		//Got from the fuzzing test
 		{"examzle@localhos ", false, true},
 	}
