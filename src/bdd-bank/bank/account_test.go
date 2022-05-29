@@ -14,12 +14,12 @@ func iHaveABankAccountWith(balance int) error {
 }
 
 func iDeposit(amount int) error {
-	testAccount.deposit(amount)
+	testAccount.Deposit(amount)
 	return nil
 }
 
 func iWithdraw(amount int) error {
-	testAccount.withdraw(amount)
+	testAccount.Withdraw(amount)
 	return nil
 }
 

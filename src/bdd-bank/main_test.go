@@ -1,4 +1,12 @@
-package bank
+package main
+
+import "testing"
+
+//dummy test that executes main()
+//https://stackoverflow.com/a/51277293
+func TestRunMain(t *testing.T) {
+	main()
+}
 
 /*var opts = godog.Options{
 	Output: colors.Colored(os.Stdout),
@@ -47,12 +55,6 @@ func TestMain(m *testing.M) {
 			t.Errorf("Reverse: %q, want %q", rev, tc.want)
 		}
 	}
-}
-
-//dummy test that executes main()
-//https://stackoverflow.com/a/51277293
-func TestRunMain(t *testing.T) {
-	main()
 }
 
 func FuzzReverse(f *testing.F) {
