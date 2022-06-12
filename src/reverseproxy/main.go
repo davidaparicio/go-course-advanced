@@ -8,6 +8,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 )
 
 func init() {
@@ -41,8 +43,37 @@ func main() {
 				rw.Header().Set(key, value)
 			}
 		}
+
+		// To handle data streams
+		done := make(chan bool)
+		go func(){
+			for {
+				select {
+				case <- time.Ticker(10*time.Millisecond):
+					rw.(http.Flusher).Flush()
+				case <- done:
+					return
+				}
+			}
+		}
+
+		// To handle trailer header
+		trailerKeys := []string{}
+		for key := range resp.Trailer {
+			trailerKeys = append(trailerKeys, key)
+		}
+
+		rw.Header().Set("Trailer", strings.Join(trailerKeys, ","))
+
 		rw.WriteHeader(resp.StatusCode)
 		io.Copy(rw, resp.Body)
+
+		for key, values := range resp.Trailer {
+			for _, value := range values {
+				rw.Header().Set(key, value)
+			}
+		}
+		close(done) //end the go routine
 	})
 	http.ListenAndServe(":8080", proxy)
 }
