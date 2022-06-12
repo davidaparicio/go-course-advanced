@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"golang.org/x/net/http2"
 )
 
 func init() {
@@ -31,6 +33,8 @@ func main() {
 		req.RequestURI = ""
 		s, _, _ := net.SplitHostPort(req.RemoteAddr) //8m
 		req.Header.Add("X-Forward-For", s)
+	
+		http2.ConfigureTransport(http.DefaultTransport.(*http.Transport))
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
@@ -45,17 +49,18 @@ func main() {
 		}
 
 		// To handle data streams
+		ticker := time.NewTicker(10 * time.Millisecond)
 		done := make(chan bool)
 		go func(){
 			for {
 				select {
-				case <- time.Ticker(10*time.Millisecond):
+				case <- ticker.C: // select case must be send or receive
 					rw.(http.Flusher).Flush()
 				case <- done:
 					return
 				}
 			}
-		}
+		}()
 
 		// To handle trailer header
 		trailerKeys := []string{}
@@ -73,7 +78,11 @@ func main() {
 				rw.Header().Set(key, value)
 			}
 		}
+		ticker.Stop()
 		close(done) //end the go routine
 	})
-	http.ListenAndServe(":8080", proxy)
+	// HTTP 1
+	//http.ListenAndServe(":8080", proxy)
+	// HTTP 2
+	http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", proxy)
 }
