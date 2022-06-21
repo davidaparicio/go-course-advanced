@@ -1,0 +1,146 @@
+~/c/g/d/g/s/mutation-testing2 ❯❯❯ go test -v
+=== RUN   TestGreetingsByLocale
+=== RUN   TestGreetingsByLocale/#00
+=== RUN   TestGreetingsByLocale/en
+=== RUN   TestGreetingsByLocale/pt
+--- PASS: TestGreetingsByLocale (0.00s)
+    --- PASS: TestGreetingsByLocale/#00 (0.00s)
+    --- PASS: TestGreetingsByLocale/en (0.00s)
+    --- PASS: TestGreetingsByLocale/pt (0.00s)
+PASS
+ok  	github.com/davidaparicio/go-course-advanced/src/mutation-testing2	0.373s
+~/c/g/d/g/s/mutation-testing2 ❯❯❯ go-mutesting .
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-1014437253/main.go.0" with checksum fb41b54d6d084ac4f62bacff16c15917
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-1014437253/main.go.1" with checksum 104ba5f669165219b14d5d5bbf38485d
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-1014437253/main.go.2" with checksum e045c6f562637fbd0b0a0ee8e6747dfe
+The mutation score is 1.000000 (3 passed, 0 failed, 0 duplicated, 0 skipped, total is 3)
+
+
+
+FAIL "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-2456993442/main.go.5" with checksum 5122aec73027311fe57d8066c70f8a12
+The mutation score is 0.166667 (1 passed, 5 failed, 0 duplicated, 0 skipped, total is 6)
+~/c/g/d/g/s/mutation-testing2 ❯❯❯ go-mutesting .
+main_test.go:1:1: expected 'package', found 'EOF'
+Could not find any suitable Go source files
+~/c/g/d/g/s/mutation-testing2 ❯❯❯ go-mutesting .                                                                                          ✘ 3
+SKIP "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-2658474360/main.go.0" with checksum e44d6f69f7c46de1b1e2f77dcba6496e
+SKIP "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-2658474360/main.go.1" with checksum c6fdbbf37d9eee53b6759360c2145a64
+SKIP "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-2658474360/main.go.2" with checksum ff7d030befe7f27654df6d10226e7dad
+SKIP "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-2658474360/main.go.3" with checksum d0a34b86427c500f3fffad171ea86874
+SKIP "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-2658474360/main.go.4" with checksum 54800d4e3ca6918b4f152f1c601a97bd
+SKIP "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-2658474360/main.go.5" with checksum 5122aec73027311fe57d8066c70f8a12
+The mutation score is 0.000000 (0 passed, 0 failed, 0 duplicated, 6 skipped, total is 6)
+
+~/c/g/d/g/s/mutation-testing2 ❯❯❯ go-mutesting .
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3938798063/main.go.0" with checksum e44d6f69f7c46de1b1e2f77dcba6496e
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3938798063/main.go.1" with checksum c6fdbbf37d9eee53b6759360c2145a64
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3938798063/main.go.2" with checksum ff7d030befe7f27654df6d10226e7dad
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3938798063/main.go.3" with checksum d0a34b86427c500f3fffad171ea86874
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3938798063/main.go.4" with checksum 54800d4e3ca6918b4f152f1c601a97bd
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3938798063/main.go.5" with checksum 5122aec73027311fe57d8066c70f8a12
+The mutation score is 1.000000 (6 passed, 0 failed, 0 duplicated, 0 skipped, total is 6)
+~/c/g/d/g/s/mutation-testing2 ❯❯❯ go-mutesting .
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.0" with checksum e44d6f69f7c46de1b1e2f77dcba6496e
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.1" with checksum c6fdbbf37d9eee53b6759360c2145a64
+--- main.go	2022-06-21 16:34:11.000000000 +0200
++++ /var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.2	2022-06-21 17:00:13.000000000 +0200
+@@ -25,7 +25,7 @@
+ 	}
+
+ 	if locale == "pt" {
+-		return "Olá"
++
+ 	}
+
+ 	return ""
+
+FAIL "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.2" with checksum ff7d030befe7f27654df6d10226e7dad
+--- main.go	2022-06-21 16:34:11.000000000 +0200
++++ /var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.3	2022-06-21 17:00:15.000000000 +0200
+@@ -3,7 +3,7 @@
+ import "fmt"
+
+ func main() {
+-	fmt.Println(GreetingsByLocale("en"))
++	_ = fmt.Println
+ 	fmt.Println(GreetingsByLocale("pt"))
+ 	fmt.Println(GreetingsByLocale(""))
+ }
+
+FAIL "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.3" with checksum d0a34b86427c500f3fffad171ea86874
+--- main.go	2022-06-21 16:34:11.000000000 +0200
++++ /var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.4	2022-06-21 17:00:15.000000000 +0200
+@@ -4,7 +4,7 @@
+
+ func main() {
+ 	fmt.Println(GreetingsByLocale("en"))
+-	fmt.Println(GreetingsByLocale("pt"))
++	_ = fmt.Println
+ 	fmt.Println(GreetingsByLocale(""))
+ }
+
+
+FAIL "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.4" with checksum 54800d4e3ca6918b4f152f1c601a97bd
+--- main.go	2022-06-21 16:34:11.000000000 +0200
++++ /var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.5	2022-06-21 17:00:16.000000000 +0200
+@@ -5,7 +5,7 @@
+ func main() {
+ 	fmt.Println(GreetingsByLocale("en"))
+ 	fmt.Println(GreetingsByLocale("pt"))
+-	fmt.Println(GreetingsByLocale(""))
++	_ = fmt.Println
+ }
+
+ func GreetingsByLocale(locale string) string {
+
+FAIL "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-4242123221/main.go.5" with checksum 5122aec73027311fe57d8066c70f8a12
+The mutation score is 0.333333 (2 passed, 4 failed, 0 duplicated, 0 skipped, total is 6)
+~/c/g/d/g/s/mutation-testing2 ❯❯❯ go-mutesting .
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3019746441/main.go.0" with checksum e44d6f69f7c46de1b1e2f77dcba6496e
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3019746441/main.go.1" with checksum c6fdbbf37d9eee53b6759360c2145a64
+PASS "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3019746441/main.go.2" with checksum ff7d030befe7f27654df6d10226e7dad
+--- main.go	2022-06-21 16:34:11.000000000 +0200
++++ /var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3019746441/main.go.3	2022-06-21 17:00:35.000000000 +0200
+@@ -3,7 +3,7 @@
+ import "fmt"
+
+ func main() {
+-	fmt.Println(GreetingsByLocale("en"))
++	_ = fmt.Println
+ 	fmt.Println(GreetingsByLocale("pt"))
+ 	fmt.Println(GreetingsByLocale(""))
+ }
+
+FAIL "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3019746441/main.go.3" with checksum d0a34b86427c500f3fffad171ea86874
+--- main.go	2022-06-21 16:34:11.000000000 +0200
++++ /var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3019746441/main.go.4	2022-06-21 17:00:36.000000000 +0200
+@@ -4,7 +4,7 @@
+
+ func main() {
+ 	fmt.Println(GreetingsByLocale("en"))
+-	fmt.Println(GreetingsByLocale("pt"))
++	_ = fmt.Println
+ 	fmt.Println(GreetingsByLocale(""))
+ }
+
+
+FAIL "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3019746441/main.go.4" with checksum 54800d4e3ca6918b4f152f1c601a97bd
+--- main.go	2022-06-21 16:34:11.000000000 +0200
++++ /var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3019746441/main.go.5	2022-06-21 17:00:36.000000000 +0200
+@@ -5,7 +5,7 @@
+ func main() {
+ 	fmt.Println(GreetingsByLocale("en"))
+ 	fmt.Println(GreetingsByLocale("pt"))
+-	fmt.Println(GreetingsByLocale(""))
++	_ = fmt.Println
+ }
+
+ func GreetingsByLocale(locale string) string {
+
+FAIL "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3019746441/main.go.5" with checksum 5122aec73027311fe57d8066c70f8a12
+The mutation score is 0.500000 (3 passed, 3 failed, 0 duplicated, 0 skipped, total is 6)
+~/c/g/d/g/s/mutation-testing2 ❯❯❯ go-mutesting .
+SKIP "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3925337537/main.go.0" with checksum df671caa6670e2dea300b743d054e471
+SKIP "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3925337537/main.go.1" with checksum 7284be08b9d25cb9601363e25bd97229
+SKIP "/var/folders/_c/b1s2h27926vcyxzl48s1mh840000gn/T/go-mutesting-3925337537/main.go.2" with checksum ec032fcec6d8a817c7b0f461957da192
+The mutation score is 0.000000 (0 passed, 0 failed, 0 duplicated, 3 skipped, total is 3)
