@@ -1,4 +1,4 @@
-# mandelbrot
+.gitignore# mandelbrot
 *.pprof
 # namecheck + mandelbrot
 *.out
@@ -10,3 +10,5 @@ out.png
 exec_*
 # fuzz-palindrome
 testdata/
+# reverse-proxy
+*.pem

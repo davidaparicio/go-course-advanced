@@ -35,6 +35,7 @@ func main() {
 		req.Header.Add("X-Forward-For", s)
 	
 		http2.ConfigureTransport(http.DefaultTransport.(*http.Transport))
+		
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
