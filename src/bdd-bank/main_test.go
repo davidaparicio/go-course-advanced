@@ -1,109 +1,72 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/davidaparicio/go-course-advanced/src/bdd-godog/bank"
+)
 
 //dummy test that executes main()
 //https://stackoverflow.com/a/51277293
-func TestRunMain(t *testing.T) {
+/*func TestRunMain(t *testing.T) {
 	main()
-}
+}*/
 
-/*var opts = godog.Options{
-	Output: colors.Colored(os.Stdout),
-	Format: "progress", // can define default values
-}
-
-func init() {
-	//godog.BindFlags("godog.", pflag.CommandLine, &opts) // godog v0.10.0 and earlier
-	godog.BindCommandLineFlags("godog.", &opts) // godog v0.11.0 and later
-}
-
-func TestMain(m *testing.M) {
-	pflag.Parse()
-	opts.Paths = pflag.Args()
-
-	status := godog.TestSuite{
-		Name: "godogs",
-		//TestSuiteInitializer: InitializeTestSuite,
-		//ScenarioInitializer:  InitializeScenario,
-		Options: &opts,
-	}.Run()
-
-	// Optional: Run `testing` package's logic besides godog.
-	if st := m.Run(); st > status {
-		status = st
-	}
-
-	os.Exit(status)
-}
-*/
-
-/*func TestReverse(t *testing.T) {
+func TestDeposit(t *testing.T) {
 	testcases := []struct {
-		in, want string
+		start, deposit, want int
 	}{
-		{"Hello, world", "dlrow ,olleH"},
-		{" ", " "},
-		{"!12345", "54321!"},
+		{10, 0, 10},
+		{100, 50, 150},
+		{-100, 50, -50},
 	}
 	for _, tc := range testcases {
-		rev, err := Reverse(tc.in)
-		if err != nil {
-			return
-		}
-		if rev != tc.want {
-			t.Errorf("Reverse: %q, want %q", rev, tc.want)
+		acc := bank.NewAccount("Test")
+		acc.Deposit(tc.start)
+		acc.Deposit(tc.deposit)
+		res := acc.Balance()
+		if res != tc.want {
+			t.Errorf("TestDeposit(start: %d, deposit: %d): got %d, want %d", tc.start, tc.deposit, res, tc.want)
 		}
 	}
 }
 
-func FuzzReverse(f *testing.F) {
-	testcases := []string{"Hello, world", " ", "!12345"}
+func FuzzDeposit(f *testing.F) {
+	acc := bank.NewAccount("Fuzz Buzz")
+	acc.Deposit(844383084)                                                       //Random initialization
+	testcases := []int{10, 100, -100, -9223372036854775808, 9223372036854775807} //https://gosamples.dev/int-min-max/
 	for _, tc := range testcases {
 		f.Add(tc) // Use f.Add to provide a seed corpus
 	}
-	f.Fuzz(func(t *testing.T, orig string) {
-		rev, err1 := Reverse(orig)
-		if err1 != nil {
-			//return
-			// Rather than returning, you can also call t.Skip()
-			// to stop the execution of that fuzz input.
-			t.Skip()
-		}
-		doubleRev, err2 := Reverse(rev)
-		if err2 != nil {
-			t.Skip()
-		}
+	f.Fuzz(func(t *testing.T, deposit int) {
+		start := acc.Balance()
+		acc.Deposit(deposit)
+		end := acc.Balance()
 		//Log added to understand better
-		t.Logf("Number of runes: orig=%d, rev=%d, doubleRev=%d", utf8.RuneCountInString(orig), utf8.RuneCountInString(rev), utf8.RuneCountInString(doubleRev))
-		if orig != doubleRev {
-			t.Errorf("Before: %q, after: %q", orig, doubleRev)
-		}
-		if utf8.ValidString(orig) && !utf8.ValidString(rev) {
-			t.Errorf("Reverse produced invalid UTF-8 string %q", rev)
+		//t.Logf("Account: start=%d, deposit=%d, end=%d", start, deposit, end)
+		if end != start+deposit {
+			t.Errorf("Deposit produced invalid result %d != %d + %d", end, start, deposit)
 		}
 	})
 }
 
-func benchmarkReverse(b *testing.B, s []string) {
-	// b is lowcase to avoid the error: wrong signature for BenchmarkReverse,
-	// must be: func BenchmarkReverse(b *testing.B)
+func benchmarkDeposit(b *testing.B, deposits []int) {
+	acc := bank.NewAccount("Bench Mark")
 	for i := 0; i < b.N; i++ {
-		for _, str := range s {
-			Reverse(str)
+		for _, deposit := range deposits {
+			acc.Deposit(deposit)
 		}
 	}
 }
 
-func BenchmarkReverse_Simple(b *testing.B) {
-	s := []string{"", "bar", "eye", "foo"}
-	benchmarkReverse(b, s)
+func BenchmarkDeposit_Small(b *testing.B) {
+	d := []int{0, 10, -10}
+	benchmarkDeposit(b, d)
 }
 
-func BenchmarkReverse_BigInputs(b *testing.B) {
-	s := []string{
-		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent lacinia quam in elit laoreet rutrum ac id ante. Aliquam at mollis felis. Nam congue orci non vestibulum blandit. Fusce efficitur ligula lorem, eu cursus enim varius eget. Mauris hendrerit auctor mattis. Pellentesque et luctus nibh. Integer eget mi sed dolor.",
-		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. In aliquam purus volutpat mattis bibendum. Donec eget feugiat diam. Phasellus id diam dolor. Proin quis lobortis.",
-	}
-	benchmarkReverse(b, s)
-}*/
+func BenchmarkReverse_Big(b *testing.B) {
+	d := []int{132283115, -596768679, 224391349, -316524437, 217443011, 435025920, 357738921, 91156801, -448356816, 844383084}
+	// Timestamp: 2022-07-13 14:52:17 UTC
+	// https://www.random.org/integers/?num=10&min=-1000000000&max=1000000000&col=5&base=10&format=html&rnd=new
+	benchmarkDeposit(b, d)
+}

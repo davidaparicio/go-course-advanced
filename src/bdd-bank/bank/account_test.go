@@ -27,7 +27,7 @@ func itShouldHaveABalanceOf(balance int) error {
 	if testAccount.balance == balance {
 		return nil
 	}
-	return fmt.Errorf("Incorrect account balance, I got %d, I wanted %d", testAccount.balance, balance)
+	return fmt.Errorf("Incorrect account balance, I wanted %d, I got %d", testAccount.balance, balance)
 }
 
 func InitializeScenario(ctx *godog.ScenarioContext) {
