@@ -6,6 +6,7 @@
 out.png
 # memorylayout
 *.mem
+*.svg
 # reducebinsize
 exec_*
 # fuzz-palindrome
